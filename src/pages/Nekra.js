@@ -16,7 +16,7 @@ export default function NekraTable() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:3001/nekra")
+      .get("https://argopig-6ad68ad8d47f.herokuapp.com/nekra")
       .then((res) => setListNekra(res.data))
       .catch(console.error);
   }, []);
@@ -57,7 +57,10 @@ export default function NekraTable() {
     }
 
     try {
-      const res = await axios.post("http://localhost:3001/nekra", newNekra);
+      const res = await axios.post(
+        "https://argopig-6ad68ad8d47f.herokuapp.com/nekra",
+        newNekra,
+      );
       setListNekra((prev) => [...prev, res.data]);
       setNewNekra({
         day: "",

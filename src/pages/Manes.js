@@ -48,13 +48,15 @@ export default function Manes() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get("http://localhost:3001/manes");
+        const res = await axios.get(
+          "https://argopig-6ad68ad8d47f.herokuapp.com/manes",
+        );
         const manes = Array.isArray(res.data) ? res.data : [];
 
         const full = await Promise.all(
           manes.map(async (m) => {
             const resTok = await axios.get(
-              `http://localhost:3001/toketos/${m.id}`,
+              `https://argopig-6ad68ad8d47f.herokuapp.com/toketos/${m.id}`,
             );
             const toketoi = Array.isArray(resTok.data) ? resTok.data : [];
 
@@ -65,7 +67,7 @@ export default function Manes() {
             );
 
             const resEp = await axios.get(
-              `http://localhost:3001/epibasi/${lastToketos.id}`,
+              `https://argopig-6ad68ad8d47f.herokuapp.com/epibasi/${lastToketos.id}`,
             );
             lastToketos.epibaseis = Array.isArray(resEp.data) ? resEp.data : [];
 
@@ -122,7 +124,9 @@ export default function Manes() {
   const deleteMana = async (id) => {
     if (!window.confirm("Διαγραφή μάνας;")) return;
     try {
-      await axios.delete(`http://localhost:3001/manes/${id}`);
+      await axios.delete(
+        `https://argopig-6ad68ad8d47f.herokuapp.com/manes/${id}`,
+      );
       setListManes((m) => m.filter((mana) => mana.id !== id));
       toast.info("Μάνα διαγράφηκε");
     } catch {
@@ -138,13 +142,16 @@ export default function Manes() {
     }
 
     try {
-      const res = await axios.post("http://localhost:3001/manes", {
-        number: newMana.number,
-        position: newMana.position,
-        dayLive: newMana.dayLive,
-        breed: newMana.breed,
-        live: 0,
-      });
+      const res = await axios.post(
+        "https://argopig-6ad68ad8d47f.herokuapp.com/manes",
+        {
+          number: newMana.number,
+          position: newMana.position,
+          dayLive: newMana.dayLive,
+          breed: newMana.breed,
+          live: 0,
+        },
+      );
 
       setListManes((prev) => [...prev, res.data]);
       setNewMana({ number: "", position: "", dayLive: "", breed: "" });
@@ -278,10 +285,13 @@ export default function Manes() {
                     value={m.position || ""}
                     onChange={(e) =>
                       axios
-                        .put(`http://localhost:3001/manes/${m.id}`, {
-                          ...m,
-                          position: e.target.value,
-                        })
+                        .put(
+                          `https://argopig-6ad68ad8d47f.herokuapp.com/manes/${m.id}`,
+                          {
+                            ...m,
+                            position: e.target.value,
+                          },
+                        )
                         .then((res) =>
                           setListManes((prev) =>
                             prev.map((x) => (x.id === m.id ? res.data : x)),

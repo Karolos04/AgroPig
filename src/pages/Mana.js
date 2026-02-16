@@ -16,7 +16,9 @@ export default function Mana() {
   useEffect(() => {
     const fetchKaproi = async () => {
       try {
-        const res = await axios.get("http://localhost:3001/kaproi");
+        const res = await axios.get(
+          "https://argopig-6ad68ad8d47f.herokuapp.com/kaproi",
+        );
         setKaproi(res.data);
       } catch (err) {
         console.error(err);
@@ -33,13 +35,19 @@ export default function Mana() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const resMana = await axios.get(`http://localhost:3001/manes/${id}`);
+        const resMana = await axios.get(
+          `https://argopig-6ad68ad8d47f.herokuapp.com/manes/${id}`,
+        );
         setMana(resMana.data);
 
-        const resTok = await axios.get(`http://localhost:3001/toketos/${id}`);
+        const resTok = await axios.get(
+          `https://argopig-6ad68ad8d47f.herokuapp.com/toketos/${id}`,
+        );
         const full = await Promise.all(
           resTok.data.map(async (t) => {
-            const ep = await axios.get(`http://localhost:3001/epibasi/${t.id}`);
+            const ep = await axios.get(
+              `https://argopig-6ad68ad8d47f.herokuapp.com/epibasi/${t.id}`,
+            );
             return { ...t, epibaseis: ep.data || [] };
           }),
         );
@@ -60,7 +68,7 @@ export default function Mana() {
     try {
       const updatedMana = { ...mana, [key]: value };
       const res = await axios.put(
-        `http://localhost:3001/manes/${id}`,
+        `https://argopig-6ad68ad8d47f.herokuapp.com/manes/${id}`,
         updatedMana,
       );
       setMana(res.data);
@@ -94,7 +102,10 @@ export default function Mana() {
   // Αποθήκευση τοκετού
   const saveToketo = async (t) => {
     try {
-      const res = await axios.put(`http://localhost:3001/toketos/${t.id}`, t);
+      const res = await axios.put(
+        `https://argopig-6ad68ad8d47f.herokuapp.com/toketos/${t.id}`,
+        t,
+      );
       setToketoi((prev) =>
         prev.map((tok) =>
           tok.id === t.id ? { ...res.data, epibaseis: tok.epibaseis } : tok,
@@ -111,7 +122,9 @@ export default function Mana() {
   const deleteToketo = async (idToketo) => {
     if (!window.confirm("Διαγραφή τοκετού;")) return;
     try {
-      await axios.delete(`http://localhost:3001/toketos/${idToketo}`);
+      await axios.delete(
+        `https://argopig-6ad68ad8d47f.herokuapp.com/toketos/${idToketo}`,
+      );
       setToketoi((p) => p.filter((t) => t.id !== idToketo));
       toast.info("Τοκετός διαγράφηκε");
     } catch (err) {
@@ -123,16 +136,19 @@ export default function Mana() {
   // Προσθήκη νέου τοκετού
   const addToketo = async () => {
     try {
-      const res = await axios.post("http://localhost:3001/toketos", {
-        idManas: id,
-        dayToketos: "",
-        bornLive: "",
-        bornDead: "",
-        Ablactation: "",
-        dayAblactation: "",
-        rate: "",
-        text: "",
-      });
+      const res = await axios.post(
+        "https://argopig-6ad68ad8d47f.herokuapp.com/toketos",
+        {
+          idManas: id,
+          dayToketos: "",
+          bornLive: "",
+          bornDead: "",
+          Ablactation: "",
+          dayAblactation: "",
+          rate: "",
+          text: "",
+        },
+      );
       setToketoi([...toketoi, { ...res.data, epibaseis: [] }]);
       toast.success("Νέος τοκετός προστέθηκε!");
     } catch (err) {
@@ -144,13 +160,16 @@ export default function Mana() {
   // Προσθήκη νέας επίβασης
   const addEpibasi = async (toketoId) => {
     try {
-      const res = await axios.post("http://localhost:3001/epibasi", {
-        idToketou: toketoId,
-        day: "",
-        idKapros: "",
-        text: "",
-        rejection: 0,
-      });
+      const res = await axios.post(
+        "https://argopig-6ad68ad8d47f.herokuapp.com/epibasi",
+        {
+          idToketou: toketoId,
+          day: "",
+          idKapros: "",
+          text: "",
+          rejection: 0,
+        },
+      );
       setToketoi((prev) =>
         prev.map((t) =>
           t.id === toketoId
@@ -170,7 +189,10 @@ export default function Mana() {
     try {
       const toketo = toketoi.find((t) => t.id === toketoId);
       const ep = toketo.epibaseis.find((e) => e.id === epId);
-      await axios.put(`http://localhost:3001/epibasi/${ep.id}`, ep);
+      await axios.put(
+        `https://argopig-6ad68ad8d47f.herokuapp.com/epibasi/${ep.id}`,
+        ep,
+      );
       toast.success("Επίβαση αποθηκεύτηκε!");
     } catch (err) {
       console.error(err);
@@ -182,7 +204,9 @@ export default function Mana() {
   const deleteEpibasi = async (toketoId, epId) => {
     if (!window.confirm("Διαγραφή επίβασης;")) return;
     try {
-      await axios.delete(`http://localhost:3001/epibasi/${epId}`);
+      await axios.delete(
+        `https://argopig-6ad68ad8d47f.herokuapp.com/epibasi/${epId}`,
+      );
       setToketoi((prev) =>
         prev.map((t) =>
           t.id === toketoId

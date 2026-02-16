@@ -24,12 +24,15 @@ export default function Kaproi() {
     }
 
     try {
-      const res = await axios.post("http://localhost:3001/kaproi", {
-        number: newKapro.number,
-        position: newKapro.position,
-        live: 0,
-        dayLive: newKapro.dayLive,
-      });
+      const res = await axios.post(
+        "https://argopig-6ad68ad8d47f.herokuapp.com/kaproi",
+        {
+          number: newKapro.number,
+          position: newKapro.position,
+          live: 0,
+          dayLive: newKapro.dayLive,
+        },
+      );
 
       setListKaproi((prev) => [...prev, res.data]);
       setNewKapro({ number: "", position: "", dayLive: "" });
@@ -48,14 +51,16 @@ export default function Kaproi() {
   useEffect(() => {
     const fetchKaproi = async () => {
       try {
-        const res = await axios.get("http://localhost:3001/kaproi");
+        const res = await axios.get(
+          "https://argopig-6ad68ad8d47f.herokuapp.com/kaproi",
+        );
         const kaproiData = Array.isArray(res.data) ? res.data : [];
 
         // Για κάθε κάπρο παίρνουμε το τελευταίο σπέρμα
         const full = await Promise.all(
           kaproiData.map(async (k) => {
             const resSperma = await axios.get(
-              `http://localhost:3001/kaproi/sperma/${k.id}`,
+              `https://argopig-6ad68ad8d47f.herokuapp.com/kaproi/sperma/${k.id}`,
             );
             const spermaList = Array.isArray(resSperma.data)
               ? resSperma.data
@@ -79,7 +84,9 @@ export default function Kaproi() {
   const deleteKaproi = async (id) => {
     if (!window.confirm("Διαγραφή κάπρου;")) return;
     try {
-      await axios.delete(`http://localhost:3001/kaproi/${id}`);
+      await axios.delete(
+        `https://argopig-6ad68ad8d47f.herokuapp.com/kaproi/${id}`,
+      );
       setListKaproi((p) => p.filter((k) => k.id !== id));
       toast.info("Κάπρος διαγράφηκε");
     } catch {
@@ -90,10 +97,13 @@ export default function Kaproi() {
   /* ================= UPDATE POSITION ================= */
   const updatePosition = async (k, newPosition) => {
     try {
-      const res = await axios.put(`http://localhost:3001/kaproi/${k.id}`, {
-        ...k,
-        position: newPosition,
-      });
+      const res = await axios.put(
+        `https://argopig-6ad68ad8d47f.herokuapp.com/kaproi/${k.id}`,
+        {
+          ...k,
+          position: newPosition,
+        },
+      );
       setListKaproi((prev) => prev.map((x) => (x.id === k.id ? res.data : x)));
     } catch {
       toast.error("Σφάλμα ενημέρωσης θέσης");

@@ -22,12 +22,14 @@ export default function Kapros() {
     const fetchData = async () => {
       try {
         // Πάρε τον κάπρο
-        const resKapros = await axios.get(`http://localhost:3001/kaproi/${id}`);
+        const resKapros = await axios.get(
+          `https://argopig-6ad68ad8d47f.herokuapp.com/kaproi/${id}`,
+        );
         setKapros(resKapros.data);
 
         // Πάρε όλα τα σπέρματα του κάπρου
         const resSperma = await axios.get(
-          `http://localhost:3001/kaproi/sperma/${id}`,
+          `https://argopig-6ad68ad8d47f.herokuapp.com/kaproi/sperma/${id}`,
         );
         setSpermaList(Array.isArray(resSperma.data) ? resSperma.data : []);
       } catch (err) {
@@ -47,12 +49,15 @@ export default function Kapros() {
     }
 
     try {
-      const res = await axios.post("http://localhost:3001/sperma", {
-        day: newSperma.day,
-        grams: newSperma.grams,
-        rate: newSperma.rate,
-        idKapros: id,
-      });
+      const res = await axios.post(
+        "https://argopig-6ad68ad8d47f.herokuapp.com/sperma",
+        {
+          day: newSperma.day,
+          grams: newSperma.grams,
+          rate: newSperma.rate,
+          idKapros: id,
+        },
+      );
 
       setSpermaList((prev) => [...prev, res.data]);
       setNewSperma({ day: "", grams: "", rate: "", idKapros: "" });
@@ -67,7 +72,9 @@ export default function Kapros() {
   const deleteSperma = async (sId) => {
     if (!window.confirm("Διαγραφή σπερμάτων;")) return;
     try {
-      await axios.delete(`http://localhost:3001/sperma/${sId}`);
+      await axios.delete(
+        `https://argopig-6ad68ad8d47f.herokuapp.com/sperma/${sId}`,
+      );
       setSpermaList((prev) => prev.filter((s) => s.id !== sId));
       toast.info("Σπέρμα διαγράφηκε");
     } catch (err) {
