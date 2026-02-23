@@ -6,36 +6,51 @@ import { useNavigate } from "react-router-dom";
 
 export default function Kaproi() {
   const [listKaproi, setListKaproi] = useState([]);
+  const [thesiList, setThesiList] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [positionFilter, setPositionFilter] = useState("");
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [newKapro, setNewKapro] = useState({
     number: "",
-    position: "",
+    positionId: "",
     dayLive: "",
   });
 
-  // Αποθήκευση κάπρου
+  const countKaproi = listKaproi.filter((k) => Number(k.live) === 0).length;
+
+  useEffect(() => {
+    const fetchKaproiAndThesi = async () => {
+      try {
+        const [resKaproi, resThesi] = await Promise.all([
+          axios.get("https://argopig-api.onrender.com/kaproi"),
+          axios.get("https://argopig-api.onrender.com/thesi"),
+        ]);
+        setThesiList(resThesi.data);
+        const kaproiData = Array.isArray(resKaproi.data) ? resKaproi.data : [];
+        const formatted = kaproiData.map((k) => {
+          const spermaList = k.spermas || k.sperma || k.spermata || [];
+          return { ...k, lastSperma: spermaList[0] || null };
+        });
+        setListKaproi(formatted);
+      } catch (err) {
+        toast.error("Σφάλμα φόρτωσης δεδομένων");
+      }
+    };
+    fetchKaproiAndThesi();
+  }, []);
+
   const saveNewKapro = async () => {
-    if (!newKapro.number || !newKapro.position || !newKapro.dayLive) {
-      toast.error("Συμπλήρωσε όλα τα πεδία");
-      return;
-    }
-
+    if (!newKapro.number || !newKapro.positionId || !newKapro.dayLive)
+      return toast.error("Συμπλήρωσε όλα τα πεδία");
     try {
-      const res = await axios.post(
-        "https://argopig-6ad68ad8d47f.herokuapp.com/kaproi",
-        {
-          number: newKapro.number,
-          position: newKapro.position,
-          live: 0,
-          dayLive: newKapro.dayLive,
-        },
-      );
-
-      setListKaproi((prev) => [...prev, res.data]);
-      setNewKapro({ number: "", position: "", dayLive: "" });
+      const res = await axios.post("https://argopig-api.onrender.com/kaproi", {
+        ...newKapro,
+        live: 0,
+      });
+      setListKaproi((prev) => [...prev, { ...res.data, lastSperma: null }]);
+      setNewKapro({ number: "", positionId: "", dayLive: "" });
       setIsModalOpen(false);
       toast.success("Ο κάπρος αποθηκεύτηκε");
     } catch {
@@ -43,137 +58,82 @@ export default function Kaproi() {
     }
   };
 
-  const countKaproi = listKaproi.filter(
-    (kaproi) => Number(kaproi.live) === 0,
-  ).length;
-
-  /* ================= FETCH ================= */
-  useEffect(() => {
-    const fetchKaproi = async () => {
-      try {
-        const res = await axios.get(
-          "https://argopig-6ad68ad8d47f.herokuapp.com/kaproi",
-        );
-        const kaproiData = Array.isArray(res.data) ? res.data : [];
-
-        // Για κάθε κάπρο παίρνουμε το τελευταίο σπέρμα
-        const full = await Promise.all(
-          kaproiData.map(async (k) => {
-            const resSperma = await axios.get(
-              `https://argopig-6ad68ad8d47f.herokuapp.com/kaproi/sperma/${k.id}`,
-            );
-            const spermaList = Array.isArray(resSperma.data)
-              ? resSperma.data
-              : [];
-            const lastSperma = spermaList[0] || null; // τελευταία ημερομηνία πρώτα
-            return { ...k, lastSperma };
-          }),
-        );
-
-        setListKaproi(full);
-      } catch (err) {
-        console.error(err);
-        toast.error("Σφάλμα φόρτωσης καπρών");
-      }
-    };
-
-    fetchKaproi();
-  }, []);
-
-  /* ================= DELETE ================= */
   const deleteKaproi = async (id) => {
-    if (!window.confirm("Διαγραφή κάπρου;")) return;
+    if (!window.confirm("Διαγραφή κάπρου; Θα διαγραφούν και τα σπέρματά του."))
+      return;
     try {
-      await axios.delete(
-        `https://argopig-6ad68ad8d47f.herokuapp.com/kaproi/${id}`,
-      );
+      await axios.delete(`https://argopig-api.onrender.com/kaproi/${id}`);
       setListKaproi((p) => p.filter((k) => k.id !== id));
-      toast.info("Κάπρος διαγράφηκε");
+      toast.info("Ο κάπρος διαγράφηκε");
     } catch {
       toast.error("Σφάλμα διαγραφής");
     }
   };
 
-  /* ================= UPDATE POSITION ================= */
-  const updatePosition = async (k, newPosition) => {
-    try {
-      const res = await axios.put(
-        `https://argopig-6ad68ad8d47f.herokuapp.com/kaproi/${k.id}`,
-        {
-          ...k,
-          position: newPosition,
-        },
-      );
-      setListKaproi((prev) => prev.map((x) => (x.id === k.id ? res.data : x)));
-    } catch {
-      toast.error("Σφάλμα ενημέρωσης θέσης");
-    }
-  };
-
-  /* ================= FILTER ================= */
   const filteredKaproi = listKaproi
-    .filter((m) => m.number.toString().includes(searchTerm))
-    .filter((k) => positionFilter === "" || k.position === positionFilter)
-    .filter((k) => k.live === 0);
+    .filter((k) => k.number.toString().includes(searchTerm))
+    .filter(
+      (k) =>
+        positionFilter === "" ||
+        String(k.positionId) === String(positionFilter),
+    )
+    .filter((k) => k.live === 0)
+    .sort((a, b) => {
+      const dateA =
+        a.lastSperma && a.lastSperma.day
+          ? new Date(a.lastSperma.day)
+          : new Date(0);
+      const dateB =
+        b.lastSperma && b.lastSperma.day
+          ? new Date(b.lastSperma.day)
+          : new Date(0);
+      return dateB - dateA;
+    });
 
   return (
-    <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-6">
-      <div className="bg-white rounded-2xl shadow border p-6 space-y-4">
-        {/* TITLE & SEARCH */}
-        <h1 className="text-3xl font-bold text-gray-800 mb-2 text-center">
-          Κάπροι
-        </h1>
-
-        <input
-          type="text"
-          placeholder={`Αναζήτηση σε ${countKaproi} κάπρους`}
-          className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-
-        <div className="flex flex-col md:flex-row gap-3">
-          {/* Φίλτρο θέσης */}
-          <select
-            className="flex-1 p-3 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
-            value={positionFilter}
-            onChange={(e) => setPositionFilter(e.target.value)}
-          >
-            <option value="">Φιλτράρισμα ανά θέση</option>
-            {[
-              "Α1",
-              "Α2",
-              "Α3",
-              "Α4",
-              "Α5",
-              "Α6",
-              "Α7",
-              "Α8",
-              "Α9",
-              "Α10",
-              "Δ1",
-              "Δ2",
-              "Δ3",
-              "ΞΗΡΑ",
-              "ΤΟΚΕΤΟΣ",
-              "ΑΛΛΟΥ",
-            ].map((p) => (
-              <option key={p}>{p}</option>
-            ))}
-          </select>
+    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
+      {/* HEADER CARD */}
+      <div className="bg-white rounded-3xl shadow-sm p-6 md:p-8 border-t-8 border-green-500 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-black text-gray-800 tracking-tight">
+            ΚΑΠΡΟΙ
+          </h1>
+          <p className="text-gray-500 font-medium mt-1">
+            Σύνολο Ενεργών: {countKaproi}
+          </p>
         </div>
-      </div>
-      {/* ADD BUTTON */}
-      <div className="flex justify-end mt-4">
         <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl shadow transition"
+          className="bg-green-600 hover:bg-green-700 active:scale-95 text-white px-6 py-3 rounded-2xl shadow-md transition-all font-bold w-full sm:w-auto text-lg"
         >
-          + Προσθήκη
+          + Νέος Κάπρος
         </button>
       </div>
 
-      {/* CARDS */}
+      {/* SEARCH & FILTERS CARD */}
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-4 md:p-6 flex flex-col md:flex-row gap-4">
+        <input
+          type="text"
+          placeholder="Αναζήτηση αριθμού..."
+          className="flex-1 p-3.5 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-green-500 font-bold text-gray-700 transition-colors"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <select
+          className="flex-1 p-3.5 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-green-500 font-bold text-gray-700 cursor-pointer transition-colors"
+          value={positionFilter}
+          onChange={(e) => setPositionFilter(e.target.value)}
+        >
+          <option value="">Όλες οι Θέσεις</option>
+          {thesiList.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* LIST ITEMS */}
       <div className="space-y-4">
         {filteredKaproi.map((k) => {
           const lastSpermaDate =
@@ -184,57 +144,70 @@ export default function Kaproi() {
           return (
             <div
               key={k.id}
-              className="bg-white rounded-2xl shadow border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition hover:bg-gray-50"
+              className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-6 transition-all hover:shadow-md hover:border-green-200 group"
             >
-              <div className="font-semibold text-gray-800 text-lg">
-                {k.number}
+              <div className="flex flex-col md:flex-row md:items-center gap-6 lg:gap-10 flex-1">
+                {/* ΚΑΛΥΤΕΡΟ ΚΕΝΟ ΑΝΑΜΕΣΑ ΣΕ ΑΡΙΘΜΟ ΚΑΙ ΘΕΣΗ */}
+                <div className="flex items-center gap-6 w-full md:w-auto">
+                  <span className="font-black text-2xl md:text-3xl text-gray-800 min-w-[90px]">
+                    #{k.number}
+                  </span>
+                  <select
+                    className="p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-500 font-bold text-gray-700 cursor-pointer transition-colors flex-1 md:w-[180px]"
+                    value={k.positionId || ""}
+                    onChange={(e) => {
+                      const newPosId = e.target.value;
+                      axios
+                        .put(
+                          `https://argopig-api.onrender.com/kaproi/${k.id}`,
+                          {
+                            positionId: newPosId,
+                          },
+                        )
+                        .then(() => {
+                          setListKaproi((p) =>
+                            p.map((x) =>
+                              x.id === k.id
+                                ? { ...x, positionId: newPosId }
+                                : x,
+                            ),
+                          );
+                          toast.success("Ενημερώθηκε");
+                        })
+                        .catch(() => toast.error("Σφάλμα"));
+                    }}
+                  >
+                    <option value="" disabled>
+                      Επιλογή θέσης
+                    </option>
+                    {thesiList.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-black uppercase text-gray-400 mb-0.5">
+                    Τελ. Σπέρμα
+                  </span>
+                  <span className="font-black text-gray-800 bg-gray-100 px-3 py-1 rounded-lg w-max shadow-sm">
+                    {lastSpermaDate}
+                  </span>
+                </div>
               </div>
 
-              {/* POSITION */}
-              <select
-                className="border rounded-lg p-2 w-full sm:w-32 focus:ring-2 focus:ring-green-500 outline-none"
-                value={k.position || ""}
-                onChange={(e) => updatePosition(k, e.target.value)}
-              >
-                <option value="">διάλεξε</option>
-                {[
-                  "Α1",
-                  "Α2",
-                  "Α3",
-                  "Α4",
-                  "Α5",
-                  "Α6",
-                  "Α7",
-                  "Α8",
-                  "Α9",
-                  "Α10",
-                  "Δ1",
-                  "Δ2",
-                  "Δ3",
-                  "ΞΗΡΑ",
-                  "ΤΟΚΕΤΟΣ",
-                  "ΑΛΛΟΥ",
-                ].map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
-
-              {/* LAST SPERMA */}
-              <div className="text-gray-600">{lastSpermaDate}</div>
-
-              {/* ACTIONS */}
-              <div className="flex gap-2">
+              <div className="flex gap-3 w-full lg:w-auto mt-2 lg:mt-0">
                 <button
                   onClick={() => navigate(`/kapros/${k.id}`)}
-                  className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg transition"
+                  className="flex-1 lg:flex-none bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold px-6 py-3 rounded-xl transition-colors"
                 >
-                  ✏️
+                  Καρτέλα
                 </button>
                 <button
                   onClick={() => deleteKaproi(k.id)}
-                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg transition"
+                  className="flex-1 lg:flex-none bg-red-50 hover:bg-red-100 text-red-600 px-5 py-3 rounded-xl transition-colors font-bold"
                 >
                   🗑️
                 </button>
@@ -246,85 +219,58 @@ export default function Kaproi() {
 
       {/* MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative">
-            <h2 className="text-2xl font-bold mb-6">Νέος Κάπρος</h2>
-
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+          <div className="bg-white w-full max-w-md rounded-[2rem] shadow-2xl p-8 relative animate-in zoom-in duration-200">
+            <h2 className="text-3xl font-black mb-6 text-gray-800 tracking-tight">
+              Νέος Κάπρος
+            </h2>
             <div className="space-y-4">
               <input
                 type="text"
-                placeholder="Αριθμός"
-                className="border rounded-xl p-3 w-full focus:ring-2 focus:ring-green-500 outline-none"
-                value={newKapro?.number || ""}
+                placeholder="Αριθμός (π.χ. 50)"
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-green-500 font-bold text-gray-700"
+                value={newKapro.number}
                 onChange={(e) =>
                   setNewKapro({ ...newKapro, number: e.target.value })
                 }
               />
-
               <select
-                className="border rounded-xl p-3 w-full focus:ring-2 focus:ring-green-500 outline-none"
-                value={newKapro?.position || ""}
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-green-500 font-bold text-gray-700 cursor-pointer"
+                value={newKapro.positionId}
                 onChange={(e) =>
-                  setNewKapro({ ...newKapro, position: e.target.value })
+                  setNewKapro({ ...newKapro, positionId: e.target.value })
                 }
               >
-                <option value="">Θέση</option>
-                {[
-                  "Α1",
-                  "Α2",
-                  "Α3",
-                  "Α4",
-                  "Α5",
-                  "Α6",
-                  "Α7",
-                  "Α8",
-                  "Α9",
-                  "Α10",
-                  "Δ1",
-                  "Δ2",
-                  "Δ3",
-                  "ΞΗΡΑ",
-                  "ΤΟΚΕΤΟΣ",
-                  "ΑΛΛΟΥ",
-                ].map((p) => (
-                  <option key={p} value={p}>
-                    {p}
+                <option value="">Επιλογή Θέσης</option>
+                {thesiList.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
                   </option>
                 ))}
               </select>
-
               <input
                 type="date"
-                className="border rounded-xl p-3 w-full focus:ring-2 focus:ring-green-500 outline-none"
-                value={newKapro?.dayLive || ""}
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-green-500 font-bold text-gray-700"
+                value={newKapro.dayLive}
                 onChange={(e) =>
                   setNewKapro({ ...newKapro, dayLive: e.target.value })
                 }
               />
             </div>
-
-            <div className="flex justify-end gap-3 mt-6">
+            <div className="flex gap-3 mt-8">
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-gray-200 hover:bg-gray-300"
+                className="flex-1 py-4 rounded-2xl bg-gray-100 font-bold text-gray-600 hover:bg-gray-200 transition-colors"
               >
                 Άκυρο
               </button>
-
               <button
                 onClick={saveNewKapro}
-                className="px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white"
+                className="flex-1 py-4 rounded-2xl bg-green-600 text-white font-bold hover:bg-green-700 shadow-md transition-all active:scale-95"
               >
                 Αποθήκευση
               </button>
             </div>
-
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="absolute top-3 right-4 text-gray-400 hover:text-gray-700 text-xl"
-            >
-              ×
-            </button>
           </div>
         </div>
       )}

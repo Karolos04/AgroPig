@@ -1,90 +1,86 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { parseISO, isValid, addDays, format } from "date-fns";
 
 export default function Mana() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [mana, setMana] = useState({});
   const [toketoi, setToketoi] = useState([]);
   const [showAll, setShowAll] = useState(false);
-
-  // Κάπροι για επιλογή στις επιβάσεις
   const [kaproi, setKaproi] = useState([]);
+  const [thesiList, setThesiList] = useState([]);
+
+  const safeDate = (date) =>
+    !date || date === "0000-00-00" ? "" : date.split("T")[0];
+
   useEffect(() => {
-    const fetchKaproi = async () => {
+    const fetchLookups = async () => {
       try {
-        const res = await axios.get(
-          "https://argopig-6ad68ad8d47f.herokuapp.com/kaproi",
-        );
-        setKaproi(res.data);
+        const [resKaproi, resThesi] = await Promise.all([
+          axios.get("https://argopig-api.onrender.com/kaproi"),
+          axios.get("https://argopig-api.onrender.com/thesi"),
+        ]);
+        setKaproi(resKaproi.data);
+        setThesiList(resThesi.data);
       } catch (err) {
-        console.error(err);
-        toast.error("Σφάλμα φόρτωσης καπρών");
+        toast.error("Σφάλμα φόρτωσης βοηθητικών δεδομένων");
       }
     };
-    fetchKaproi();
+    fetchLookups();
   }, []);
 
-  // Βοηθητική συνάρτηση για ασφαλή εμφάνιση ημερομηνιών
-  const safeDate = (date) => (!date || date === "0000-00-00" ? "-" : date);
-
-  // Load Mana + Toketoi + Epibaseis
   useEffect(() => {
     const loadData = async () => {
       try {
-        const resMana = await axios.get(
-          `https://argopig-6ad68ad8d47f.herokuapp.com/manes/${id}`,
+        const res = await axios.get(
+          `https://argopig-api.onrender.com/manes/${id}`,
         );
-        setMana(resMana.data);
-
-        const resTok = await axios.get(
-          `https://argopig-6ad68ad8d47f.herokuapp.com/toketos/${id}`,
-        );
-        const full = await Promise.all(
-          resTok.data.map(async (t) => {
-            const ep = await axios.get(
-              `https://argopig-6ad68ad8d47f.herokuapp.com/epibasi/${t.id}`,
-            );
-            return { ...t, epibaseis: ep.data || [] };
+        const data = res.data;
+        setMana({
+          id: data.id,
+          number: data.number,
+          positionId: data.positionId,
+          breed: data.breed,
+          dayLive: data.dayLive,
+        });
+        const formattedToketoi = (data.toketos || data.toketoi || []).map(
+          (t) => ({
+            ...t,
+            epibaseis: t.epibasis || t.epibaseis || [],
           }),
         );
-        setToketoi(full);
+        setToketoi(formattedToketoi);
       } catch (err) {
-        console.error(err);
-        toast.error("Σφάλμα φόρτωσης δεδομένων");
+        toast.error("Σφάλμα φόρτωσης δεδομένων της μάνας");
       }
     };
     loadData();
   }, [id]);
 
-  // Μεταβλητή για εμφάνιση καρτελών τοκετών
   const visibleToketoi = showAll ? toketoi : toketoi.slice(-1);
 
-  // Ενημέρωση Χοιρομητέρας
   const updateMana = async (key, value) => {
     try {
       const updatedMana = { ...mana, [key]: value };
       const res = await axios.put(
-        `https://argopig-6ad68ad8d47f.herokuapp.com/manes/${id}`,
+        `https://argopig-api.onrender.com/manes/${id}`,
         updatedMana,
       );
-      setMana(res.data);
+      setMana({ ...res.data, positionId: res.data.positionId });
+      toast.success("Η καρτέλα ενημερώθηκε!");
     } catch (err) {
-      console.error(err);
       toast.error("Σφάλμα ενημέρωσης χοιρομητέρας");
     }
   };
 
-  // Ενημέρωση τοκετού
   const updateToketo = (id, key, value) =>
     setToketoi((prev) =>
       prev.map((t) => (t.id === id ? { ...t, [key]: value } : t)),
     );
-
-  // Ενημέρωση επίβασης
   const updateEpibasi = (toketoId, epId, key, value) =>
     setToketoi((prev) =>
       prev.map((t) =>
@@ -99,11 +95,10 @@ export default function Mana() {
       ),
     );
 
-  // Αποθήκευση τοκετού
   const saveToketo = async (t) => {
     try {
       const res = await axios.put(
-        `https://argopig-6ad68ad8d47f.herokuapp.com/toketos/${t.id}`,
+        `https://argopig-api.onrender.com/toketos/${t.id}`,
         t,
       );
       setToketoi((prev) =>
@@ -111,65 +106,57 @@ export default function Mana() {
           tok.id === t.id ? { ...res.data, epibaseis: tok.epibaseis } : tok,
         ),
       );
-      toast.success("Τοκετός αποθηκεύτηκε!");
+      toast.success("Ο Τοκετός αποθηκεύτηκε!");
     } catch (err) {
-      console.error(err);
       toast.error("Σφάλμα αποθήκευσης τοκετού");
     }
   };
 
-  // Διαγραφή τοκετού
   const deleteToketo = async (idToketo) => {
-    if (!window.confirm("Διαγραφή τοκετού;")) return;
+    if (
+      !window.confirm("Διαγραφή τοκετού; Θα διαγραφούν και οι επιβάσεις του!")
+    )
+      return;
     try {
       await axios.delete(
-        `https://argopig-6ad68ad8d47f.herokuapp.com/toketos/${idToketo}`,
+        `https://argopig-api.onrender.com/toketos/${idToketo}`,
       );
       setToketoi((p) => p.filter((t) => t.id !== idToketo));
-      toast.info("Τοκετός διαγράφηκε");
+      toast.info("Ο Τοκετός διαγράφηκε");
     } catch (err) {
-      console.error(err);
       toast.error("Σφάλμα διαγραφής τοκετού");
     }
   };
 
-  // Προσθήκη νέου τοκετού
   const addToketo = async () => {
     try {
-      const res = await axios.post(
-        "https://argopig-6ad68ad8d47f.herokuapp.com/toketos",
-        {
-          idManas: id,
-          dayToketos: "",
-          bornLive: "",
-          bornDead: "",
-          Ablactation: "",
-          dayAblactation: "",
-          rate: "",
-          text: "",
-        },
-      );
+      const res = await axios.post("https://argopig-api.onrender.com/toketos", {
+        idManas: id,
+        dayToketos: "",
+        bornLive: "",
+        bornDead: "",
+        Ablactation: "",
+        dayAblactation: null,
+        rate: "",
+        text: "",
+      });
       setToketoi([...toketoi, { ...res.data, epibaseis: [] }]);
       toast.success("Νέος τοκετός προστέθηκε!");
     } catch (err) {
-      console.error(err);
       toast.error("Σφάλμα προσθήκης τοκετού");
     }
   };
 
-  // Προσθήκη νέας επίβασης
   const addEpibasi = async (toketoId) => {
     try {
-      const res = await axios.post(
-        "https://argopig-6ad68ad8d47f.herokuapp.com/epibasi",
-        {
-          idToketou: toketoId,
-          day: "",
-          idKapros: "",
-          text: "",
-          rejection: 0,
-        },
-      );
+      const today = new Date().toISOString().split("T")[0];
+      const res = await axios.post("https://argopig-api.onrender.com/epibasi", {
+        idToketou: toketoId,
+        day: today,
+        idKapros: "",
+        text: "",
+        rejection: 0,
+      });
       setToketoi((prev) =>
         prev.map((t) =>
           t.id === toketoId
@@ -179,34 +166,25 @@ export default function Mana() {
       );
       toast.success("Νέα επίβαση προστέθηκε!");
     } catch (err) {
-      console.error(err);
       toast.error("Σφάλμα προσθήκης επίβασης");
     }
   };
 
-  // Αποθήκευση επίβασης
   const saveEpibasi = async (toketoId, epId) => {
     try {
       const toketo = toketoi.find((t) => t.id === toketoId);
       const ep = toketo.epibaseis.find((e) => e.id === epId);
-      await axios.put(
-        `https://argopig-6ad68ad8d47f.herokuapp.com/epibasi/${ep.id}`,
-        ep,
-      );
-      toast.success("Επίβαση αποθηκεύτηκε!");
+      await axios.put(`https://argopig-api.onrender.com/epibasi/${ep.id}`, ep);
+      toast.success("Η Επίβαση αποθηκεύτηκε!");
     } catch (err) {
-      console.error(err);
       toast.error("Σφάλμα αποθήκευσης επίβασης");
     }
   };
 
-  // Διαγραφή επίβασης
   const deleteEpibasi = async (toketoId, epId) => {
     if (!window.confirm("Διαγραφή επίβασης;")) return;
     try {
-      await axios.delete(
-        `https://argopig-6ad68ad8d47f.herokuapp.com/epibasi/${epId}`,
-      );
+      await axios.delete(`https://argopig-api.onrender.com/epibasi/${epId}`);
       setToketoi((prev) =>
         prev.map((t) =>
           t.id === toketoId
@@ -214,80 +192,81 @@ export default function Mana() {
             : t,
         ),
       );
-      toast.info("Επίβαση διαγράφηκε");
+      toast.info("Η Επίβαση διαγράφηκε");
     } catch (err) {
-      console.error(err);
       toast.error("Σφάλμα διαγραφής επίβασης");
     }
   };
 
-  // Τελευταία επίβαση
-  const lastEpibasi = toketoi
-    .flatMap((t) => t.epibaseis)
-    .filter((e) => e.day && e.day !== "0000-00-00")
-    .sort((a, b) => new Date(b.day) - new Date(a.day))[0];
-
-  // Τελευταία ημερομηνία επιβάσης και υπολογισμός τοκετού
-  let dayToEpibasi = "-";
-  let dayToToketo = "-";
-  let isRejected = "";
-  if (lastEpibasi && isValid(parseISO(lastEpibasi.day))) {
-    dayToEpibasi = format(parseISO(lastEpibasi.day), "dd/MM/yyyy");
-    dayToToketo = format(addDays(parseISO(lastEpibasi.day), 116), "dd/MM/yyyy");
-    isRejected = Boolean(lastEpibasi.rejection);
+  let dayToEpibasi = "—",
+    dayToToketo = "—",
+    isRejected = false,
+    showExpectedDates = false;
+  if (toketoi.length > 0) {
+    const lastToketo = toketoi[toketoi.length - 1];
+    const hasToketoDate =
+      lastToketo.dayToketos && lastToketo.dayToketos !== "0000-00-00";
+    if (!hasToketoDate) {
+      const lastEpibasiInToketo = lastToketo.epibaseis
+        .filter((e) => e.day && e.day !== "0000-00-00")
+        .sort((a, b) => new Date(b.day) - new Date(a.day))[0];
+      if (lastEpibasiInToketo && isValid(parseISO(lastEpibasiInToketo.day))) {
+        dayToEpibasi = format(parseISO(lastEpibasiInToketo.day), "dd/MM/yyyy");
+        dayToToketo = format(
+          addDays(parseISO(lastEpibasiInToketo.day), 116),
+          "dd/MM/yyyy",
+        );
+        isRejected = Boolean(lastEpibasiInToketo.rejection);
+        showExpectedDates = true;
+      }
+    }
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
       <ToastContainer position="top-right" autoClose={2000} />
 
-      {/* --- Μάνα --- */}
-      <div className="bg-white rounded-2xl shadow-md p-6">
-        <h1 className="text-3xl font-bold mb-4 text-center">{mana.number}</h1>
-        <h2 className="text-2xl font-bold mb-4">Βασικά Στοιχεία Μάνας:</h2>
+      {/* --- HEADER MANA --- */}
+      <div className="bg-white rounded-3xl shadow-sm p-6 md:p-8 border-t-8 border-green-500 relative">
+        <button
+          onClick={() => navigate("/manes")}
+          className="absolute top-6 left-6 text-gray-400 hover:text-gray-800 font-bold transition-colors hidden sm:block"
+        >
+          ← Πίσω
+        </button>
+        <h1 className="text-4xl md:text-5xl font-black mb-8 text-center text-gray-800 tracking-tight">
+          #{mana.number}
+        </h1>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm sm:text-base">
-          <span>
-            Θέση:
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-gray-50/50 p-4 md:p-6 rounded-[2rem] border border-gray-100">
+          <div className="flex flex-col">
+            <span className="text-xs font-black text-gray-400 uppercase mb-2 pl-1">
+              Θέση
+            </span>
             <select
-              value={mana.position || ""}
-              onChange={(e) => updateMana("position", e.target.value)}
-              className="ml-2 p-2 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
+              value={mana.positionId || ""}
+              onChange={(e) => updateMana("positionId", e.target.value)}
+              className="p-3.5 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 outline-none font-bold text-gray-800 transition-colors cursor-pointer"
             >
-              <option value="">διάλεξε</option>
-              {[
-                "Α1",
-                "Α2",
-                "Α3",
-                "Α4",
-                "Α5",
-                "Α6",
-                "Α7",
-                "Α8",
-                "Α9",
-                "Α10",
-                "Δ1",
-                "Δ2",
-                "Δ3",
-                "ΞΗΡΑ",
-                "ΤΟΚΕΤΟΣ",
-                "ΑΛΛΟΥ",
-              ].map((p) => (
-                <option key={p} value={p}>
-                  {p}
+              <option value="">Επιλογή Θέσης</option>
+              {thesiList.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
                 </option>
               ))}
             </select>
-          </span>
+          </div>
 
-          <span>
-            Ράτσα:
+          <div className="flex flex-col">
+            <span className="text-xs font-black text-gray-400 uppercase mb-2 pl-1">
+              Ράτσα
+            </span>
             <select
               value={mana.breed || ""}
               onChange={(e) => updateMana("breed", e.target.value)}
-              className="ml-2 p-2 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
+              className="p-3.5 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 outline-none font-bold text-gray-800 transition-colors cursor-pointer"
             >
-              <option value="">διάλεξε</option>
+              <option value="">Επιλογή Ράτσας</option>
               {[
                 "Landrace",
                 "Yorkshire",
@@ -301,64 +280,84 @@ export default function Mana() {
                 </option>
               ))}
             </select>
-          </span>
+          </div>
 
-          <span>
-            Ημερομηνία Γεννήσεως:
+          <div className="flex flex-col">
+            <span className="text-xs font-black text-gray-400 uppercase mb-2 pl-1">
+              Ημερ. Γέννησης
+            </span>
             <input
               type="date"
               value={safeDate(mana.dayLive)}
               onChange={(e) => updateMana("dayLive", e.target.value)}
-              className="ml-2 p-2 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
+              className="p-3.5 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 outline-none font-bold text-gray-800 transition-colors"
             />
-          </span>
+          </div>
 
-          {!isRejected && (
-            <>
-              <span>
-                Ημερομηνία Τοκετού: <b>{dayToToketo}</b>
+          <div className="flex flex-col justify-center gap-1.5 p-3">
+            {showExpectedDates ? (
+              !isRejected ? (
+                <>
+                  <span className="text-xs font-black text-gray-400 uppercase">
+                    Αναμ. Τοκετός:{" "}
+                    <span className="text-green-600 font-black text-lg ml-1">
+                      {dayToToketo}
+                    </span>
+                  </span>
+                  <span className="text-xs font-black text-gray-400 uppercase">
+                    Τελ. Επίβαση:{" "}
+                    <span className="text-gray-800 font-black ml-1">
+                      {dayToEpibasi}
+                    </span>
+                  </span>
+                </>
+              ) : (
+                <span className="bg-red-100 text-red-700 px-4 py-2 rounded-xl font-black text-center inline-block w-max shadow-sm">
+                  ⚠️ Απορρίφθηκε
+                </span>
+              )
+            ) : toketoi.length > 0 &&
+              toketoi[toketoi.length - 1].dayToketos &&
+              toketoi[toketoi.length - 1].dayToketos !== "0000-00-00" ? (
+              <span className="bg-blue-100 text-blue-800 px-4 py-2 rounded-xl font-black text-center inline-block w-max shadow-sm">
+                ✅ Ολοκληρώθηκε
               </span>
-              <span>
-                Τελευταία Επίβαση: <b>{dayToEpibasi}</b>
+            ) : (
+              <span className="text-sm font-bold text-gray-400 italic mt-2">
+                Σε αναμονή επίβασης...
               </span>
-            </>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
-      {/* --- Κουμπιά --- */}
+      {/* --- ΚΟΥΜΠΙΑ --- */}
       <div className="flex flex-col sm:flex-row gap-4">
         <button
           onClick={() => setShowAll(!showAll)}
-          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow transition"
+          className="w-full sm:w-auto bg-gray-800 hover:bg-gray-900 active:scale-95 text-white font-bold px-6 py-3.5 rounded-2xl shadow-md transition-all"
         >
-          {showAll ? "Εμφάνιση τελευταίου" : "Εμφάνιση όλων"}
+          {showAll ? "👀 Εμφάνιση Τελευταίου" : "📂 Εμφάνιση Όλων"}
         </button>
-
         <button
           onClick={addToketo}
-          className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl shadow transition"
+          className="w-full sm:w-auto bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold px-6 py-3.5 rounded-2xl shadow-md transition-all"
         >
           + Προσθήκη Τοκετού
         </button>
       </div>
 
-      {/* --- Καρτέλες Τοκετού --- */}
-      <div className="space-y-4">
+      {/* --- ΤΟΚΕΤΟΙ --- */}
+      <div className="space-y-6">
         {visibleToketoi.map((t, idx) => (
           <div
             key={t.id}
-            className={`bg-white rounded-2xl shadow p-4 space-y-4 transition-transform hover:scale-[1.01] ${
-              idx === visibleToketoi.length - 1
-                ? "border-2 border-green-500 ring-2 ring-green-200"
-                : ""
-            }`}
+            className={`bg-white rounded-[2rem] shadow-sm border border-gray-100 p-6 md:p-8 space-y-6 transition-all hover:shadow-md ${idx === visibleToketoi.length - 1 ? "border-t-4 border-t-green-500" : ""}`}
           >
-            {/* Τοκετός */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="font-semibold block mb-1">
-                  Ημερομηνία Τοκετού:
+            <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 items-end">
+              <div className="col-span-2 lg:col-span-1">
+                <label className="font-black text-[11px] text-gray-400 uppercase block mb-2 pl-1">
+                  Ημ. Τοκετού
                 </label>
                 <input
                   type="date"
@@ -366,34 +365,38 @@ export default function Mana() {
                   onChange={(e) =>
                     updateToketo(t.id, "dayToketos", e.target.value)
                   }
-                  className="w-full p-2 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
+                  className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-green-500 transition-colors"
                 />
               </div>
               <div>
-                <label className="font-semibold block mb-1">Ζωντανά:</label>
+                <label className="font-black text-[11px] text-gray-400 uppercase block mb-2 pl-1">
+                  Ζωντανά
+                </label>
                 <input
-                  type="text"
+                  type="number"
                   value={t.bornLive || ""}
                   onChange={(e) =>
                     updateToketo(t.id, "bornLive", e.target.value)
                   }
-                  className="w-full p-2 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
+                  className="w-full p-3.5 bg-green-50/50 border border-green-100 rounded-2xl font-black outline-none text-center text-green-700 focus:ring-2 focus:ring-green-500 transition-colors"
                 />
               </div>
               <div>
-                <label className="font-semibold block mb-1">Νεκρά:</label>
+                <label className="font-black text-[11px] text-gray-400 uppercase block mb-2 pl-1">
+                  Νεκρά
+                </label>
                 <input
-                  type="text"
+                  type="number"
                   value={t.bornDead || ""}
                   onChange={(e) =>
                     updateToketo(t.id, "bornDead", e.target.value)
                   }
-                  className="w-full p-2 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
+                  className="w-full p-3.5 bg-red-50/50 border border-red-100 rounded-2xl font-black outline-none text-center text-red-600 focus:ring-2 focus:ring-green-500 transition-colors"
                 />
               </div>
-              <div>
-                <label className="font-semibold block mb-1">
-                  Ημέρα Απογαλακτισμού:
+              <div className="col-span-2 lg:col-span-1">
+                <label className="font-black text-[11px] text-gray-400 uppercase block mb-2 pl-1">
+                  Ημ. Απογαλακτ.
                 </label>
                 <input
                   type="date"
@@ -401,109 +404,165 @@ export default function Mana() {
                   onChange={(e) =>
                     updateToketo(t.id, "dayAblactation", e.target.value)
                   }
-                  className="w-full p-2 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
+                  className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-green-500 transition-colors"
                 />
+              </div>
+              <div>
+                <label className="font-black text-[11px] text-gray-400 uppercase block mb-2 pl-1">
+                  Απογαλακτ.
+                </label>
+                <input
+                  type="number"
+                  value={t.Ablactation || ""}
+                  onChange={(e) =>
+                    updateToketo(t.id, "Ablactation", e.target.value)
+                  }
+                  className="w-full p-3.5 bg-blue-50/50 border border-blue-100 rounded-2xl font-black outline-none text-center text-blue-700 focus:ring-2 focus:ring-green-500 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="font-black text-[11px] text-gray-400 uppercase block mb-2 pl-1">
+                  Αξιολόγηση
+                </label>
+                <select
+                  value={t.rate || ""}
+                  onChange={(e) => updateToketo(t.id, "rate", e.target.value)}
+                  className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-green-500 transition-colors cursor-pointer"
+                >
+                  <option value="">-</option>
+                  {["Α++", "Α+", "Α", "Β+", "Β", "Γ+", "Γ", "Γ-"].map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            {/* Κουμπιά Τοκετού */}
-            <div className="flex gap-2 flex-wrap">
-              <button
-                onClick={() => saveToketo(t)}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl shadow transition"
-              >
-                💾 Αποθήκευση
-              </button>
-              <button
-                onClick={() => deleteToketo(t.id)}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl shadow transition"
-              >
-                🗑️ Διαγραφή
-              </button>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-end border-b border-gray-100 pb-8">
+              <div className="lg:col-span-3">
+                <label className="font-black text-[11px] text-gray-400 uppercase block mb-2 pl-1">
+                  Σημειώσεις Τοκετού
+                </label>
+                <textarea
+                  value={t.text || ""}
+                  onChange={(e) => updateToketo(t.id, "text", e.target.value)}
+                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-medium outline-none resize-none h-14 focus:ring-2 focus:ring-green-500 transition-colors"
+                  placeholder="Προσθήκη σημείωσης..."
+                />
+              </div>
+              <div className="flex gap-2 h-14">
+                <button
+                  onClick={() => saveToketo(t)}
+                  className="flex-1 bg-green-100 hover:bg-green-200 text-green-800 font-black rounded-2xl transition-colors shadow-sm active:scale-95"
+                >
+                  💾 Αποθήκευση
+                </button>
+                <button
+                  onClick={() => deleteToketo(t.id)}
+                  className="px-5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-2xl transition-colors shadow-sm active:scale-95"
+                >
+                  🗑️
+                </button>
+              </div>
             </div>
 
-            {/* Επιβάσεις */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* ΕΠΙΒΑΣΕΙΣ */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pt-2">
               {t.epibaseis.map((e) => (
                 <div
                   key={e.id}
-                  className="bg-gray-50 p-3 rounded-2xl shadow space-y-2"
+                  className={`p-5 rounded-3xl border transition-colors ${e.rejection ? "bg-red-50/50 border-red-200" : "bg-gray-50/50 border-gray-200"} space-y-4 relative`}
                 >
-                  <label className="font-semibold block mb-1">
-                    Ημερομηνία:
-                  </label>
-                  <input
-                    type="date"
-                    value={safeDate(e.day)}
-                    onChange={(ev) =>
-                      updateEpibasi(t.id, e.id, "day", ev.target.value)
-                    }
-                    className="w-full p-2 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
-                  />
-                  <label className="font-semibold block mb-1">Κάπρος:</label>
-                  <select
-                    value={e.idKapros || ""}
-                    onChange={(ev) =>
-                      updateEpibasi(t.id, e.id, "idKapros", ev.target.value)
-                    }
-                    className="w-full p-2 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
-                  >
-                    <option value="">-- διάλεξε --</option>
-                    {kaproi.map((k) => (
-                      <option key={k.id} value={k.id}>
-                        {k.number}
-                      </option>
-                    ))}
-                  </select>
-                  <label className="font-semibold block mb-1">
-                    Σημειώσεις:
-                  </label>
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <label className="font-black text-[10px] text-gray-400 uppercase block mb-1.5 pl-1">
+                        Ημερομηνία
+                      </label>
+                      <input
+                        type="date"
+                        value={safeDate(e.day)}
+                        onChange={(ev) =>
+                          updateEpibasi(t.id, e.id, "day", ev.target.value)
+                        }
+                        className="w-full p-2.5 border border-gray-200 rounded-xl font-bold outline-none bg-white text-sm focus:ring-2 focus:ring-green-500 transition-colors"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="font-black text-[10px] text-gray-400 uppercase block mb-1.5 pl-1">
+                        Κάπρος
+                      </label>
+                      <select
+                        value={e.idKapros || ""}
+                        onChange={(ev) =>
+                          updateEpibasi(t.id, e.id, "idKapros", ev.target.value)
+                        }
+                        className="w-full p-2.5 border border-gray-200 rounded-xl font-bold outline-none bg-white text-sm focus:ring-2 focus:ring-green-500 transition-colors cursor-pointer"
+                      >
+                        <option value="">Επιλογή</option>
+                        {kaproi.map((k) => (
+                          <option key={k.id} value={k.id}>
+                            {k.number}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
                   <textarea
                     value={e.text || ""}
                     onChange={(ev) =>
                       updateEpibasi(t.id, e.id, "text", ev.target.value)
                     }
-                    className="w-full p-2 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none resize-none h-16"
+                    className="w-full p-3 border border-gray-200 rounded-xl font-medium outline-none bg-white text-sm resize-none h-16 focus:ring-2 focus:ring-green-500 transition-colors"
+                    placeholder="Σημειώσεις επίβασης..."
                   />
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(e.rejection)}
-                      onChange={(ev) =>
-                        updateEpibasi(
-                          t.id,
-                          e.id,
-                          "rejection",
-                          ev.target.checked ? 1 : 0,
-                        )
-                      }
-                      className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-2 focus:ring-green-500"
-                    />
-                    <label>Απόρριψη</label>
-                  </div>
-                  <div className="flex gap-2 pt-2">
-                    <button
-                      onClick={() => saveEpibasi(t.id, e.id)}
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-xl py-2 shadow transition"
-                    >
-                      💾
-                    </button>
-                    <button
-                      onClick={() => deleteEpibasi(t.id, e.id)}
-                      className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-xl py-2 shadow transition"
-                    >
-                      🗑️
-                    </button>
+
+                  <div className="flex items-center justify-between mt-2 pt-4 border-t border-gray-200">
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(e.rejection)}
+                        onChange={(ev) =>
+                          updateEpibasi(
+                            t.id,
+                            e.id,
+                            "rejection",
+                            ev.target.checked ? 1 : 0,
+                          )
+                        }
+                        className="w-5 h-5 text-red-600 rounded-md border-gray-300 focus:ring-red-500 cursor-pointer"
+                      />
+                      <span className="font-bold text-sm text-gray-600 group-hover:text-red-600 transition-colors">
+                        Απόρριψη
+                      </span>
+                    </label>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => saveEpibasi(t.id, e.id)}
+                        className="bg-white border border-gray-200 hover:bg-green-50 hover:border-green-200 hover:text-green-700 p-2.5 rounded-xl transition-colors shadow-sm text-sm active:scale-95"
+                      >
+                        💾
+                      </button>
+                      <button
+                        onClick={() => deleteEpibasi(t.id, e.id)}
+                        className="bg-white border border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600 p-2.5 rounded-xl transition-colors shadow-sm text-sm active:scale-95"
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
 
-              {/* Προσθήκη νέας επίβασης */}
               <button
                 onClick={() => addEpibasi(t.id)}
-                className="sm:col-span-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-2 shadow transition"
+                className="border-2 border-dashed border-gray-300 hover:border-green-500 hover:bg-green-50 text-gray-400 hover:text-green-700 rounded-3xl p-4 transition-all flex flex-col items-center justify-center font-black active:scale-95 min-h-[160px] group"
               >
-                ➕ Νέα Επίβαση
+                <span className="text-4xl mb-1 group-hover:scale-110 transition-transform">
+                  +
+                </span>{" "}
+                Νέα Επίβαση
               </button>
             </div>
           </div>

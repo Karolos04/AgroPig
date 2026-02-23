@@ -1,224 +1,263 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams } from "react-router-dom";
-import { format, parseISO } from "date-fns";
+import { useParams, useNavigate } from "react-router-dom";
+import { format, parseISO, isValid } from "date-fns";
 import { toast } from "react-toastify";
 
 export default function Kapros() {
-  const { id } = useParams(); // το ID του κάπρου από το Kaproi.js
+  const { id } = useParams();
+  const navigate = useNavigate();
   const [kapros, setKapros] = useState({});
   const [spermaList, setSpermaList] = useState([]);
+  const [thesiList, setThesiList] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [sortAsc, setSortAsc] = useState(true);
+  const [sortAsc, setSortAsc] = useState(false);
+
+  const today = new Date().toISOString().split("T")[0];
   const [newSperma, setNewSperma] = useState({
-    day: "",
+    day: today,
     grams: "",
     rate: "",
-    idKapros: "",
   });
 
-  // Φόρτωση κάπρου και σπέρματος
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Πάρε τον κάπρο
-        const resKapros = await axios.get(
-          `https://argopig-6ad68ad8d47f.herokuapp.com/kaproi/${id}`,
-        );
+        const [resKapros, resSperma, resThesi] = await Promise.all([
+          axios.get(`https://argopig-api.onrender.com/kaproi/${id}`),
+          axios.get(`https://argopig-api.onrender.com/kaproi/sperma/${id}`),
+          axios.get("https://argopig-api.onrender.com/thesi"),
+        ]);
         setKapros(resKapros.data);
-
-        // Πάρε όλα τα σπέρματα του κάπρου
-        const resSperma = await axios.get(
-          `https://argopig-6ad68ad8d47f.herokuapp.com/kaproi/sperma/${id}`,
-        );
         setSpermaList(Array.isArray(resSperma.data) ? resSperma.data : []);
+        setThesiList(resThesi.data);
       } catch (err) {
-        console.error(err);
-        toast.error("Σφάλμα φόρτωσης κάπρου ή σπερμάτων");
+        toast.error("Σφάλμα φόρτωσης δεδομένων");
       }
     };
-
     fetchData();
   }, [id]);
 
-  // Προσθήκη σπέρματος
+  const thesiName =
+    thesiList.find((t) => t.id === Number(kapros.positionId))?.name || "—";
+
   const saveNewSperma = async () => {
-    if (!newSperma.rate || !newSperma.grams || !newSperma.day) {
-      toast.error("Συμπλήρωσε όλα τα πεδία");
-      return;
-    }
-
+    if (!newSperma.grams || !newSperma.day)
+      return toast.error("Συμπλήρωσε Ημερομηνία & Γραμμάρια");
     try {
-      const res = await axios.post(
-        "https://argopig-6ad68ad8d47f.herokuapp.com/sperma",
-        {
-          day: newSperma.day,
-          grams: newSperma.grams,
-          rate: newSperma.rate,
-          idKapros: id,
-        },
-      );
-
+      const res = await axios.post("https://argopig-api.onrender.com/sperma", {
+        ...newSperma,
+        idKapros: id,
+      });
       setSpermaList((prev) => [...prev, res.data]);
-      setNewSperma({ day: "", grams: "", rate: "", idKapros: "" });
+      setNewSperma({ day: today, grams: "", rate: "" });
       setIsModalOpen(false);
-      toast.success("Η σπερματεγχηση αποθηκεύτηκε");
+      toast.success("Η σπερματέγχυση αποθηκεύτηκε");
     } catch (err) {
       toast.error("Σφάλμα αποθήκευσης");
     }
   };
 
-  // Διαγραφή σπέρματος
   const deleteSperma = async (sId) => {
-    if (!window.confirm("Διαγραφή σπερμάτων;")) return;
+    if (!window.confirm("Είστε σίγουροι για τη διαγραφή;")) return;
     try {
-      await axios.delete(
-        `https://argopig-6ad68ad8d47f.herokuapp.com/sperma/${sId}`,
-      );
+      await axios.delete(`https://argopig-api.onrender.com/sperma/${sId}`);
       setSpermaList((prev) => prev.filter((s) => s.id !== sId));
-      toast.info("Σπέρμα διαγράφηκε");
+      toast.info("Το σπέρμα διαγράφηκε");
     } catch (err) {
-      console.error(err);
-      toast.error("Σφάλμα διαγραφής σπερμάτων");
+      toast.error("Σφάλμα διαγραφής");
     }
   };
 
-  // Λίστα σπερμάτων ταξινομημένη
+  const safeDateDisplay = (dateStr) => {
+    if (!dateStr || dateStr === "0000-00-00") return "—";
+
+    const parsed = parseISO(dateStr);
+    return isValid(parsed) ? format(parsed, "dd/MM/yyyy") : "—";
+  };
+
   const sortedList = [...spermaList].sort((a, b) => {
-    const dateA = new Date(a.day);
-    const dateB = new Date(b.day);
-    return sortAsc ? dateA - dateB : dateB - dateA;
+    return sortAsc
+      ? new Date(a.day) - new Date(b.day)
+      : new Date(b.day) - new Date(a.day);
   });
 
   return (
-    <div className="p-4 md:p-6 max-w-6xl mx-auto">
-      {/* HEADER */}
-      <div className="bg-white rounded-2xl shadow-md p-5 mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-center">
-          {kapros.number || "—"}
+    <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-6">
+      {/* --- HEADER KAPROS --- */}
+      <div className="bg-white rounded-3xl shadow-sm p-6 md:p-10 relative border-t-8 border-green-500">
+        <button
+          onClick={() => navigate("/kaproi")}
+          className="absolute top-6 left-6 text-gray-400 hover:text-gray-800 font-bold transition-colors hidden sm:block"
+        >
+          ← Πίσω
+        </button>
+
+        <h1 className="text-4xl md:text-5xl font-black text-center text-gray-800 tracking-tight">
+          #{kapros.number || "—"}
         </h1>
 
-        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div>
-            <span className="font-semibold">Θέση:</span>{" "}
-            {kapros.position || "—"}
+        <div className="mt-8 flex flex-wrap justify-center gap-4 md:gap-6 text-sm md:text-base">
+          <div className="bg-gray-50 px-6 py-4 rounded-3xl border border-gray-100 text-center min-w-[140px] shadow-sm">
+            <span className="font-black text-[11px] text-gray-400 uppercase block mb-1">
+              Θέση
+            </span>
+            <span className="font-black text-xl text-gray-800">
+              {thesiName}
+            </span>
           </div>
-          <div>
-            <span className="font-semibold">Ράτσα:</span> {kapros.breed || "—"}
-          </div>
-          <div>
-            <span className="font-semibold">Ημ. Γέννησης:</span>{" "}
-            {kapros.dayLive
-              ? format(parseISO(kapros.dayLive), "dd/MM/yyyy")
-              : "—"}
+          <div className="bg-gray-50 px-6 py-4 rounded-3xl border border-gray-100 text-center min-w-[140px] shadow-sm">
+            <span className="font-black text-[11px] text-gray-400 uppercase block mb-1">
+              Ημ. Γέννησης
+            </span>
+            <span className="font-black text-xl text-gray-800">
+              {safeDateDisplay(kapros.dayLive)}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* ADD BUTTON + SORT */}
-      <div className="flex justify-between items-center mb-4">
+      {/* --- ΚΟΥΜΠΙΑ --- */}
+      <div className="flex justify-between items-center bg-white p-4 rounded-3xl shadow-sm border border-gray-100">
         <button
           onClick={() => setSortAsc(!sortAsc)}
-          className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-xl font-semibold"
+          className="bg-gray-50 border border-gray-200 hover:bg-gray-100 px-5 py-3 rounded-2xl font-bold text-gray-700 transition-colors active:scale-95"
         >
-          Ημερομηνία {sortAsc ? "↑" : "↓"}
+          Ημερομηνία {sortAsc ? "↑ (Παλαιότερα)" : "↓ (Νεότερα)"}
         </button>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl shadow"
+          className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-2xl shadow-md transition-all font-bold active:scale-95 text-lg"
         >
           + Προσθήκη
         </button>
       </div>
 
-      {/* LIST */}
-      <div className="space-y-3">
-        {sortedList.map((s, index) => (
-          <div
-            key={s.id}
-            className="bg-white rounded-2xl shadow p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
-          >
-            {/* LEFT */}
-            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
-              <span className="font-bold text-lg">#{index + 1}</span>
-              <span className="text-gray-600">
-                {format(parseISO(s.day), "dd/MM/yyyy")}
-              </span>
-              <span>
-                <span className="font-semibold">Γρ:</span> {s.grams}
-              </span>
-              <span>
-                <span className="font-semibold">Βαθμός:</span> {s.rate}
-              </span>
-            </div>
-
-            {/* ACTION */}
-            <button
-              onClick={() => deleteSperma(s.id)}
-              className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-xl w-full md:w-auto"
-            >
-              Διαγραφή
-            </button>
+      {/* --- ΛΙΣΤΑ ΣΠΕΡΜΑΤΩΝ --- */}
+      <div className="space-y-4">
+        {sortedList.length === 0 ? (
+          <div className="text-center font-bold text-gray-400 py-12 bg-white rounded-3xl border-2 border-dashed border-gray-200">
+            Δεν υπάρχουν καταγεγραμμένα σπέρματα.
           </div>
-        ))}
+        ) : (
+          sortedList.map((s, index) => (
+            <div
+              key={s.id}
+              className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:shadow-md hover:border-blue-200 border-l-8 border-l-blue-400 group"
+            >
+              <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-10 flex-1 pl-2">
+                <span className="text-gray-300 font-black text-xl w-10">
+                  {sortAsc ? `#${index + 1}` : `#${sortedList.length - index}`}
+                </span>
+
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-black uppercase text-gray-400 mb-0.5">
+                    Ημερομηνία
+                  </span>
+                  <span className="text-gray-800 font-black text-xl">
+                    {safeDateDisplay(s.day)}
+                  </span>
+                </div>
+
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-black uppercase text-gray-400 mb-0.5">
+                    Γραμμάρια
+                  </span>
+                  <span className="bg-blue-50 text-blue-800 px-4 py-1 rounded-xl font-black text-lg w-max">
+                    {s.grams}g
+                  </span>
+                </div>
+
+                {s.rate && (
+                  <div className="flex flex-col">
+                    <span className="text-[11px] font-black uppercase text-gray-400 mb-0.5">
+                      Βαθμολογία
+                    </span>
+                    <span className="bg-yellow-50 text-yellow-800 px-4 py-1 rounded-xl font-black text-lg w-max">
+                      {s.rate}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => deleteSperma(s.id)}
+                className="bg-red-50 hover:bg-red-100 text-red-600 font-bold px-5 py-3 rounded-2xl w-full md:w-auto transition-colors active:scale-95"
+              >
+                🗑️ Διαγραφή
+              </button>
+            </div>
+          ))
+        )}
       </div>
 
-      {/* MODAL */}
+      {/* --- MODAL --- */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-2xl w-full max-w-md shadow-lg relative">
-            <h2 className="text-xl font-bold mb-4">Προσθήκη</h2>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+          <div className="bg-white p-8 rounded-[2rem] w-full max-w-md shadow-2xl relative animate-in zoom-in duration-200">
+            <h2 className="text-3xl font-black mb-6 text-gray-800 tracking-tight">
+              Νέο Σπέρμα
+            </h2>
 
-            <div className="flex flex-col gap-3">
-              <input
-                type="date"
-                className="border rounded-lg p-2"
-                value={newSperma.day}
-                onChange={(e) =>
-                  setNewSperma({ ...newSperma, day: e.target.value })
-                }
-              />
-              <input
-                type="number"
-                placeholder="Γραμμάρια"
-                className="border rounded-lg p-2"
-                value={newSperma.grams}
-                onChange={(e) =>
-                  setNewSperma({ ...newSperma, grams: e.target.value })
-                }
-              />
-              <input
-                type="number"
-                placeholder="Βαθμολογία"
-                className="border rounded-lg p-2"
-                value={newSperma.rate}
-                onChange={(e) =>
-                  setNewSperma({ ...newSperma, rate: e.target.value })
-                }
-              />
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="text-[11px] font-black text-gray-400 uppercase mb-2 block pl-1">
+                  Ημερομηνία
+                </label>
+                <input
+                  type="date"
+                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-green-500 font-bold text-gray-700 transition-colors"
+                  value={newSperma.day}
+                  onChange={(e) =>
+                    setNewSperma({ ...newSperma, day: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-black text-gray-400 uppercase mb-2 block pl-1">
+                  Γραμμάρια
+                </label>
+                <input
+                  type="number"
+                  placeholder="π.χ. 100"
+                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-green-500 font-bold text-gray-700 transition-colors"
+                  value={newSperma.grams}
+                  onChange={(e) =>
+                    setNewSperma({ ...newSperma, grams: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-black text-gray-400 uppercase mb-2 block pl-1">
+                  Βαθμολογία (Προαιρετικό)
+                </label>
+                <input
+                  type="text"
+                  placeholder="π.χ. Α, Β, 10..."
+                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-green-500 font-bold text-gray-700 transition-colors"
+                  value={newSperma.rate}
+                  onChange={(e) =>
+                    setNewSperma({ ...newSperma, rate: e.target.value })
+                  }
+                />
+              </div>
             </div>
 
-            <div className="flex justify-end gap-3 mt-5">
-              <button
-                onClick={saveNewSperma}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
-              >
-                Αποθήκευση
-              </button>
+            <div className="flex justify-end gap-3 mt-8">
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg"
+                className="flex-1 py-4 rounded-2xl bg-gray-100 font-bold text-gray-600 hover:bg-gray-200 transition-colors"
               >
                 Άκυρο
               </button>
+              <button
+                onClick={saveNewSperma}
+                className="flex-1 py-4 rounded-2xl bg-green-600 hover:bg-green-700 text-white shadow-md transition-all font-bold active:scale-95"
+              >
+                Αποθήκευση
+              </button>
             </div>
-
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="absolute top-2 right-3 text-gray-500 text-xl"
-            >
-              ×
-            </button>
           </div>
         </div>
       )}
