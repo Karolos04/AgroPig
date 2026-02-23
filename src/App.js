@@ -16,7 +16,7 @@ import Kapros from "./pages/Kapros";
 import Nekra from "./pages/Nekra";
 import Sfageio from "./pages/Sfageio";
 import Thesi from "./pages/Thesi";
-import Embolia from "./pages/Embolia";
+// import Embolia from "./pages/Embolia"; // Αποσχολίασε όταν δημιουργήσεις τη σελίδα Embolia
 
 function AppContent() {
   const navigate = useNavigate();
@@ -99,7 +99,7 @@ function AppContent() {
                 Περισσότερα
               </option>
               <option value="/thesi">📍 Θέσεις</option>
-              <option value="/embolia">💉 Εμβόλια</option>
+              {/* <option value="/embolia">💉 Εμβόλια</option> */}
             </select>
           </div>
         </div>
@@ -116,7 +116,7 @@ function AppContent() {
           <Route path="/nekra" element={<Nekra />} />
           <Route path="/sfageio" element={<Sfageio />} />
           <Route path="/thesi" element={<Thesi />} />
-          <Route path="/embolia" element={<Embolia />} />
+          {/* <Route path="/embolia" element={<Embolia />} /> */}
         </Routes>
       </main>
 
@@ -232,15 +232,13 @@ function AppContent() {
                   Διαχείριση Θέσεων
                 </span>
               </button>
-              <button
+              {/* <button
                 onClick={() => handleMobileNav("/embolia")}
                 className="w-full flex items-center p-4 bg-gray-50 rounded-2xl active:bg-gray-100 transition"
               >
                 <span className="text-2xl mr-4">💉</span>
-                <span className="text-lg font-bold text-gray-700">
-                  Ιστορικό Εμβολίων
-                </span>
-              </button>
+                <span className="text-lg font-bold text-gray-700">Εμβόλια</span>
+              </button> */}
             </div>
           </div>
         </div>
