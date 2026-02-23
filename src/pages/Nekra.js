@@ -10,7 +10,7 @@ export default function NekraTable() {
   const [numberError, setNumberError] = useState("");
   const [year, setYear] = useState(new Date().getFullYear());
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  // Προεπιλεγμένη ημερομηνία σήμερα για τη φόρμα προσθήκης
   const todayStr = new Date().toISOString().split("T")[0];
   const [newNekra, setNewNekra] = useState({
     day: todayStr,
@@ -18,16 +18,17 @@ export default function NekraTable() {
     category: "0",
   });
   let numberNekra = "";
-
   const navigate = useNavigate();
   const ages = ["A", "B", "SOUPER", "MESEO", "PAXYNSH", "MANA", "KAPROS"];
 
+  // Βοηθητική συνάρτηση για ασφαλή εμφάνιση ημερομηνιών
   const safeDateDisplay = (dateStr) => {
     if (!dateStr || dateStr === "0000-00-00") return "—";
     const parsed = parseISO(dateStr);
     return isValid(parsed) ? format(parsed, "dd/MM/yyyy") : "—";
   };
 
+  // Μετατροπή κατηγορίας σε ετικέτα για εμφάνιση
   const getCategoryLabel = (cat) => {
     if (String(cat) === "0") return "Καλό";
     if (String(cat) === "1") return "Μέτριο";
@@ -35,6 +36,7 @@ export default function NekraTable() {
     return "—";
   };
 
+  // Φόρτωση όλων των δεδομένων (Νεκρά, Μάνες, Κάπροι) με ένα αίτημα
   const loadAllData = async () => {
     try {
       const [resNekra, resManes, resKaproi] = await Promise.all([
@@ -68,14 +70,17 @@ export default function NekraTable() {
     }
   };
 
+  // Φόρτωση δεδομένων κατά την αρχική απόδοση
   useEffect(() => {
     loadAllData();
   }, []);
 
+  // Φιλτράρισμα των νεκρών με βάση το επιλεγμένο έτος
   const filteredNekra = listNekra.filter(
     (n) => n.day && new Date(n.day).getFullYear() === Number(year),
   );
 
+  // Υπολογισμός συνολικών αριθμών ανά κατηγορία και ηλικία, καθώς και συνολικού αθροίσματος
   const totals = { 0: 0, 1: 0, 2: 0, sum: 0 };
   ages.forEach((a) => {
     const kala = filteredNekra.filter(
@@ -93,6 +98,7 @@ export default function NekraTable() {
     totals.sum += kala + metria + xalia;
   });
 
+  // Εύρεση εγγραφών των τελευταίων 3 ημερών για εμφάνιση στο κάτω μέρος της σελίδας
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const recentEntries = listNekra
@@ -106,6 +112,7 @@ export default function NekraTable() {
     })
     .sort((a, b) => new Date(b.day) - new Date(a.day));
 
+  // Συνάρτηση για αποθήκευση νέας εγγραφής νεκρού ζώου με έλεγχο εγκυρότητας και ενημέρωση σχετικών μανών ή κάπρων
   const handleSave = async () => {
     setNumberError("");
     if (!newNekra.day || !newNekra.age || newNekra.category === "")
@@ -148,7 +155,7 @@ export default function NekraTable() {
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-8">
-      {/* HEADER CARD - UNIFIED STYLE */}
+      {/* HEADER CARD */}
       <div className="bg-white rounded-3xl shadow-sm p-6 md:p-8 border-t-8 border-red-600 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-black text-gray-800 tracking-tight">
@@ -166,7 +173,7 @@ export default function NekraTable() {
         </button>
       </div>
 
-      {/* ΠΙΝΑΚΑΣ ΣΤΑΤΙΣΤΙΚΩΝ ΜΕ ΣΤΡΟΓΓΥΛΕΜΕΝΕΣ ΓΩΝΙΕΣ */}
+      {/* ΠΙΝΑΚΑΣ ΣΤΑΤΙΣΤΙΚΩΝ */}
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-4">
           <span className="font-black text-gray-600 uppercase text-sm tracking-wider">
@@ -253,7 +260,7 @@ export default function NekraTable() {
         </div>
       </div>
 
-      {/* ΠΡΟΣΦΑΤΕΣ ΕΓΓΡΑΦΕΣ */}
+      {/* ΠΡΟΣΦΑΤΕΣ ΕΓΓΡΑΦΕΣ (3 ΗΜΕΡΕΣ) */}
       <div className="pt-4">
         <h2 className="text-xl font-black text-gray-700 mb-4 uppercase pl-2">
           Πρόσφατες Απώλειες (Τελ. 3 Ημέρες)
@@ -347,7 +354,7 @@ export default function NekraTable() {
         </div>
       </div>
 
-      {/* MODAL - UNIFIED STYLE */}
+      {/* MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 p-4">
           <div className="bg-white w-full max-w-md rounded-[2rem] shadow-2xl p-8 relative animate-in zoom-in duration-200">

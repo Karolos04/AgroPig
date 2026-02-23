@@ -14,9 +14,11 @@ export default function Mana() {
   const [kaproi, setKaproi] = useState([]);
   const [thesiList, setThesiList] = useState([]);
 
+  // Συνάρτηση για ασφαλή εμφάνιση ημερομηνιών
   const safeDate = (date) =>
     !date || date === "0000-00-00" ? "" : date.split("T")[0];
 
+  // Φόρτωση βοηθητικών δεδομένων (κάπροι και θέσεις) κατά την αρχική φόρτωση της σελίδας
   useEffect(() => {
     const fetchLookups = async () => {
       try {
@@ -33,6 +35,7 @@ export default function Mana() {
     fetchLookups();
   }, []);
 
+  // Φόρτωση δεδομένων της μάνας και των τοκετών της κατά την αρχική φόρτωση της σελίδας ή όταν αλλάζει το ID της μάνας
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -61,8 +64,10 @@ export default function Mana() {
     loadData();
   }, [id]);
 
+  // Επιλογή τοκετών προς εμφάνιση με βάση την κατάσταση του φίλτρου "Εμφάνιση Όλων"
   const visibleToketoi = showAll ? toketoi : toketoi.slice(-1);
 
+  // Συνάρτηση για ενημέρωση πεδίων της μάνας με αποθήκευση στο backend και εμφάνιση ειδοποιήσεων
   const updateMana = async (key, value) => {
     try {
       const updatedMana = { ...mana, [key]: value };
@@ -77,10 +82,12 @@ export default function Mana() {
     }
   };
 
+  // Συνάρτηση για ενημέρωση πεδίων τοκετού και επιβάσεων με τοπική ενημέρωση της κατάστασης και αποθήκευση στο backend
   const updateToketo = (id, key, value) =>
     setToketoi((prev) =>
       prev.map((t) => (t.id === id ? { ...t, [key]: value } : t)),
     );
+  // Για τις επιβάσεις, χρειάζεται να ενημερώσουμε τη σωστή επίβαση μέσα στον σωστό τοκετό
   const updateEpibasi = (toketoId, epId, key, value) =>
     setToketoi((prev) =>
       prev.map((t) =>
@@ -95,6 +102,7 @@ export default function Mana() {
       ),
     );
 
+  // Συνάρτηση για αποθήκευση τοκετού με ενημέρωση στο backend και εμφάνιση ειδοποιήσεων
   const saveToketo = async (t) => {
     try {
       const res = await axios.put(
@@ -112,6 +120,7 @@ export default function Mana() {
     }
   };
 
+  // Συνάρτηση για διαγραφή τοκετού με επιβεβαίωση και ενημέρωση της λίστας τοκετών μετά τη διαγραφή
   const deleteToketo = async (idToketo) => {
     if (
       !window.confirm("Διαγραφή τοκετού; Θα διαγραφούν και οι επιβάσεις του!")
@@ -128,6 +137,7 @@ export default function Mana() {
     }
   };
 
+  // Συνάρτηση για προσθήκη νέου τοκετού με αρχικές κενές τιμές και ενημέρωση της λίστας τοκετών μετά την προσθήκη
   const addToketo = async () => {
     try {
       const res = await axios.post("https://argopig-api.onrender.com/toketos", {
@@ -147,6 +157,7 @@ export default function Mana() {
     }
   };
 
+  // Συνάρτηση για προσθήκη νέας επίβασης με αρχικές κενές τιμές και ενημέρωση της λίστας επιβάσεων μέσα στον σωστό τοκετό μετά την προσθήκη
   const addEpibasi = async (toketoId) => {
     try {
       const today = new Date().toISOString().split("T")[0];
@@ -170,6 +181,7 @@ export default function Mana() {
     }
   };
 
+  // Συνάρτηση για αποθήκευση επίβασης με ενημέρωση στο backend και εμφάνιση ειδοποιήσεων
   const saveEpibasi = async (toketoId, epId) => {
     try {
       const toketo = toketoi.find((t) => t.id === toketoId);
@@ -181,6 +193,7 @@ export default function Mana() {
     }
   };
 
+  // Συνάρτηση για διαγραφή επίβασης με επιβεβαίωση και ενημέρωση της λίστας επιβάσεων μέσα στον σωστό τοκετό μετά τη διαγραφή
   const deleteEpibasi = async (toketoId, epId) => {
     if (!window.confirm("Διαγραφή επίβασης;")) return;
     try {
@@ -198,6 +211,7 @@ export default function Mana() {
     }
   };
 
+  // Υπολογισμός ημερομηνιών επίβασης και τοκετού με βάση την τελευταία επίβαση που έχει ημερομηνία και εμφάνιση κατάστασης τοκετού (σε αναμονή, ολοκληρώθηκε, απορρίφθηκε)
   let dayToEpibasi = "—",
     dayToToketo = "—",
     isRejected = false,
@@ -225,8 +239,7 @@ export default function Mana() {
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
       <ToastContainer position="top-right" autoClose={2000} />
-
-      {/* --- HEADER MANA --- */}
+      {/* HEADER CARD */}
       <div className="bg-white rounded-3xl shadow-sm p-6 md:p-8 border-t-8 border-green-500 relative">
         <button
           onClick={() => navigate("/manes")}
@@ -331,7 +344,7 @@ export default function Mana() {
         </div>
       </div>
 
-      {/* --- ΚΟΥΜΠΙΑ --- */}
+      {/* BUTTONS */}
       <div className="flex flex-col sm:flex-row gap-4">
         <button
           onClick={() => setShowAll(!showAll)}
@@ -347,7 +360,7 @@ export default function Mana() {
         </button>
       </div>
 
-      {/* --- ΤΟΚΕΤΟΙ --- */}
+      {/* ΤΟΚΕΤΟΙ */}
       <div className="space-y-6">
         {visibleToketoi.map((t, idx) => (
           <div

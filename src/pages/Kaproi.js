@@ -11,15 +11,15 @@ export default function Kaproi() {
   const [positionFilter, setPositionFilter] = useState("");
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
-
   const [newKapro, setNewKapro] = useState({
     number: "",
     positionId: "",
     dayLive: "",
   });
-
+  // Υπολογισμός του πλήθους των ενεργών κάπρων (live === 0) για εμφάνιση στο header
   const countKaproi = listKaproi.filter((k) => Number(k.live) === 0).length;
 
+  // Φόρτωση των δεδομένων των κάπρων και των θέσεων κατά την αρχική φόρτωση της σελίδας
   useEffect(() => {
     const fetchKaproiAndThesi = async () => {
       try {
@@ -41,6 +41,7 @@ export default function Kaproi() {
     fetchKaproiAndThesi();
   }, []);
 
+  // Συνάρτηση για αποθήκευση νέου κάπρου με έλεγχο εγκυρότητας των πεδίων και ενημέρωση της λίστας κάπρων μετά την επιτυχή αποθήκευση
   const saveNewKapro = async () => {
     if (!newKapro.number || !newKapro.positionId || !newKapro.dayLive)
       return toast.error("Συμπλήρωσε όλα τα πεδία");
@@ -58,6 +59,7 @@ export default function Kaproi() {
     }
   };
 
+  // Συνάρτηση για διαγραφή κάπρου με επιβεβαίωση και ενημέρωση της λίστας κάπρων μετά τη διαγραφή
   const deleteKaproi = async (id) => {
     if (!window.confirm("Διαγραφή κάπρου; Θα διαγραφούν και τα σπέρματά του."))
       return;
@@ -70,6 +72,7 @@ export default function Kaproi() {
     }
   };
 
+  // Φιλτράρισμα της λίστας κάπρων με βάση τον όρο αναζήτησης, το φίλτρο θέσης και την κατάσταση "live", καθώς και ταξινόμηση με βάση την ημερομηνία του τελευταίου σπέρματος
   const filteredKaproi = listKaproi
     .filter((k) => k.number.toString().includes(searchTerm))
     .filter(

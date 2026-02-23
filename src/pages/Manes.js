@@ -12,16 +12,16 @@ export default function Manes() {
   const [positionFilter, setPositionFilter] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
-
   const [newMana, setNewMana] = useState({
     number: "",
     positionId: "",
     dayLive: "",
     breed: "",
   });
-
+  // Υπολογισμός συνολικού αριθμού ενεργών μανών (live = 0)
   const countmanes = listManes.filter((mana) => Number(mana.live) === 0).length;
 
+  // Συνάρτηση για υπολογισμό ημερών μέχρι τον επόμενο τοκετό, λαμβάνοντας υπόψη την τελευταία επίβαση και τυχόν απορρίψεις
   const getDaysToToketo = (m) => {
     if (!m.toketoi || m.toketoi.length === 0) return Infinity;
     const currentThesi = thesiList.find((t) => t.id === Number(m.positionId));
@@ -45,6 +45,7 @@ export default function Manes() {
     return Math.ceil((toketoDate - new Date()) / (1000 * 60 * 60 * 24));
   };
 
+  // Συνάρτηση για καθορισμό χρώματος του badge κατάστασης τοκετού με βάση τις ημέρες μέχρι τον τοκετό
   const getToketoBadgeColor = (days) => {
     if (days < 0) return "bg-red-600";
     if (days <= 7) return "bg-orange-500";
@@ -52,6 +53,7 @@ export default function Manes() {
     return "bg-green-500";
   };
 
+  // Φόρτωση δεδομένων μανών και θέσεων κατά την αρχική φόρτωση της σελίδας
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -78,6 +80,7 @@ export default function Manes() {
     fetchData();
   }, []);
 
+  // Εφαρμογή φίλτρων αναζήτησης, θέσης και κατάστασης, καθώς και ταξινόμηση με βάση την κατάσταση τοκετού και τις ημέρες μέχρι τον τοκετό
   const filteredManes = listManes
     .filter((m) => m.number.toString().includes(searchTerm))
     .filter(
@@ -104,6 +107,7 @@ export default function Manes() {
       return getDaysToToketo(a) - getDaysToToketo(b);
     });
 
+  // Συνάρτηση για διαγραφή μάνας με επιβεβαίωση και ενημέρωση της λίστας μανών μετά τη διαγραφή
   const deleteMana = async (id) => {
     if (!window.confirm("Διαγραφή μάνας; Θα διαγραφούν και οι τοκετοί της."))
       return;
@@ -116,6 +120,7 @@ export default function Manes() {
     }
   };
 
+  // Συνάρτηση για αποθήκευση νέας μάνας με έλεγχο εγκυρότητας των πεδίων
   const saveNewMana = async () => {
     if (!newMana.number || !newMana.positionId || !newMana.breed)
       return toast.error("Συμπλήρωσε όλα τα υποχρεωτικά πεδία");

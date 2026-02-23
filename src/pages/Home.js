@@ -11,6 +11,7 @@ export default function Home() {
   });
   const navigate = useNavigate();
 
+  // Φόρτωση των δεδομένων των μάνων και υπολογισμός των στατιστικών κατά την αρχική φόρτωση της σελίδας
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -85,7 +86,7 @@ export default function Home() {
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
-      {/* HEADER CARD - UNIFIED STYLE */}
+      {/* HEADER CARD */}
       <div className="bg-white rounded-3xl shadow-sm p-6 md:p-8 border-t-8 border-blue-600 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-black text-gray-800 tracking-tight">

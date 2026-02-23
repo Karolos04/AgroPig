@@ -35,10 +35,10 @@ function AppContent() {
   // Διαχείριση πλοήγησης από το Mobile Menu
   const handleMobileNav = (path) => {
     navigate(path);
-    setIsMobileMenuOpen(false); // Κλείνει το μενού μόλις πατήσεις
+    setIsMobileMenuOpen(false);
   };
 
-  // Βοηθητική συνάρτηση για να "φωτίζει" το ενεργό κουμπί στο κινητό
+  // Βοηθητική συνάρτηση για κινητό
   const isActive = (path) =>
     location.pathname === path
       ? "text-blue-600"
@@ -46,18 +46,18 @@ function AppContent() {
 
   return (
     <div className="App min-h-screen bg-gray-50 font-sans text-gray-900 pb-20 md:pb-0">
-      {/* ================= HEADER (Κοινό, αλλά προσαρμόζεται) ================= */}
+      {/* ================= HEADER ================= */}
       <nav className="bg-white shadow-sm border-b sticky top-0 z-40">
         <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-4">
-          {/* ΝΕΟ LOGO: ARGOPIG */}
+          {/* AGROPIG */}
           <Link
             to="/"
             className="text-3xl font-black text-blue-600 tracking-tighter"
           >
-            ARGO<span className="text-gray-800">PIG</span>
+            AGRO<span className="text-gray-800">PIG</span>
           </Link>
 
-          {/* ----- DESKTOP MENU (Κρύβεται στα κινητά) ----- */}
+          {/*  DESKTOP MENU (Κρύβεται στα κινητά)  */}
           <div className="hidden md:flex items-center gap-4 lg:gap-6">
             <Link
               to="/"
@@ -105,7 +105,7 @@ function AppContent() {
         </div>
       </nav>
 
-      {/* ================= ΚΕΝΤΡΙΚΟ ΠΕΡΙΕΧΟΜΕΝΟ ================= */}
+      {/*  ΚΕΝΤΡΙΚΟ ΠΕΡΙΕΧΟΜΕΝΟ  */}
       <main className="max-w-7xl mx-auto py-6 sm:px-4">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -120,7 +120,7 @@ function AppContent() {
         </Routes>
       </main>
 
-      {/* ================= MOBILE BOTTOM NAVIGATION (Κρύβεται στο PC) ================= */}
+      {/*  MOBILE BOTTOM NAVIGATION  */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-[0_-5px_15px_rgba(0,0,0,0.05)] z-50 px-2 pb-safe">
         <div className="flex justify-between items-center h-16">
           <button
@@ -189,7 +189,7 @@ function AppContent() {
         </div>
       </nav>
 
-      {/* ================= MOBILE BOTTOM SHEET (Το "Περισσότερα" του κινητού) ================= */}
+      {/* MOBILE BOTTOM SHEET (Το "Περισσότερα" του κινητού) */}
       {isMobileMenuOpen && (
         <div className="md:hidden fixed inset-0 bg-black/50 z-[60] flex items-end animate-in fade-in duration-200">
           <div className="bg-white w-full rounded-t-3xl p-6 pb-10 shadow-2xl animate-in slide-in-from-bottom duration-300">

@@ -12,7 +12,7 @@ export default function Sfageio() {
     new Date().getFullYear().toString(),
   );
   const navigate = useNavigate();
-
+  // Αρχικοποίηση νέας εγγραφής σφαγείου με προεπιλεγμένη ημερομηνία σήμερα
   const todayStr = new Date().toISOString().split("T")[0];
   const [newSfageio, setNewSfageio] = useState({
     day: todayStr,
@@ -23,6 +23,7 @@ export default function Sfageio() {
   });
   const categories = ["ΠΑΧΥΝΣΗ", "ΜΑΝΕΣ", "ΚΑΠΡΟΙ"];
 
+  // Φόρτωση θέσεων και ζωντανών ζώων
   const loadData = async () => {
     try {
       const [resSfageio, resManes, resKaproi] = await Promise.all([
@@ -59,16 +60,19 @@ export default function Sfageio() {
     }
   };
 
+  // Φόρτωση δεδομένων κατά την αρχική απόδοση
   useEffect(() => {
     loadData();
   }, []);
 
+  // Βοηθητική συνάρτηση για ασφαλή εμφάνιση ημερομηνιών
   const safeDateDisplay = (dateStr) => {
     if (!dateStr || dateStr === "0000-00-00") return "—";
     const parsed = parseISO(dateStr);
     return isValid(parsed) ? format(parsed, "dd/MM/yyyy") : "—";
   };
 
+  // Διαχείριση αποθήκευσης νέας εγγραφής σφαγείου
   const handleSave = async () => {
     if (!newSfageio.day || !newSfageio.quantity || !newSfageio.category)
       return toast.error("Συμπλήρωσε τα απαραίτητα πεδία");
@@ -96,6 +100,7 @@ export default function Sfageio() {
     }
   };
 
+  // Διαχείριση διαγραφής εγγραφής σφαγείου
   const handleDelete = async (id) => {
     if (!window.confirm("Διαγραφή αυτής της εγγραφής;")) return;
     try {
@@ -107,11 +112,14 @@ export default function Sfageio() {
     }
   };
 
+  // Φιλτράρισμα εγγραφών πάχυνσης για το επιλεγμένο έτος και υπολογισμός στατιστικών
   const paxynshFiltered = listSfageio.filter(
     (item) =>
       item.category === "PAXYNSH" &&
       new Date(item.day).getFullYear().toString() === selectedYear,
   );
+
+  // Υπολογισμός συνολικών ποσοτήτων και κιλών για το επιλεγμένο έτος
   const yearlyStats = paxynshFiltered.reduce(
     (acc, item) => {
       acc.quantity += Number(item.quantity || 0);
@@ -123,7 +131,7 @@ export default function Sfageio() {
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
-      {/* HEADER CARD - UNIFIED STYLE */}
+      {/* HEADER CARD */}
       <div className="bg-white rounded-3xl shadow-sm p-6 md:p-8 border-t-8 border-red-600 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-black text-gray-800 tracking-tight">
@@ -146,7 +154,7 @@ export default function Sfageio() {
         </div>
       </div>
 
-      {/* ΣΥΝΟΛΑ ΠΑΧΥΝΣΗΣ - REDESIGNED */}
+      {/* ΣΥΝΟΛΑ ΠΑΧΥΝΣΗΣ */}
       <div className="bg-blue-600 rounded-[2rem] shadow-lg p-8 text-white relative overflow-hidden">
         <div className="absolute -right-8 -bottom-10 opacity-10 text-[10rem] font-black leading-none">
           {selectedYear}
@@ -268,7 +276,7 @@ export default function Sfageio() {
         </div>
       </div>
 
-      {/* MODAL - UNIFIED STYLE */}
+      {/* MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 p-4">
           <div className="bg-white w-full max-w-md rounded-[2rem] shadow-2xl p-8 relative animate-in zoom-in duration-200">

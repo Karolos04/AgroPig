@@ -12,7 +12,7 @@ export default function Kapros() {
   const [thesiList, setThesiList] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sortAsc, setSortAsc] = useState(false);
-
+  // Προεπιλεγμένη ημερομηνία για νέα σπερματέγχυση είναι η σημερινή
   const today = new Date().toISOString().split("T")[0];
   const [newSperma, setNewSperma] = useState({
     day: today,
@@ -20,6 +20,7 @@ export default function Kapros() {
     rate: "",
   });
 
+  // Φόρτωση δεδομένων καπρού, σπερμάτων και θέσεων κατά την αρχική φόρτωση της σελίδας
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -38,9 +39,11 @@ export default function Kapros() {
     fetchData();
   }, [id]);
 
+  // Εύρεση ονόματος θέσης καπρού με βάση το positionId
   const thesiName =
     thesiList.find((t) => t.id === Number(kapros.positionId))?.name || "—";
 
+  // Συνάρτηση για αποθήκευση νέας σπερματέγχυσης με έλεγχο εγκυρότητας των πεδίων και ενημέρωση της λίστας σπερμάτων μετά την αποθήκευση
   const saveNewSperma = async () => {
     if (!newSperma.grams || !newSperma.day)
       return toast.error("Συμπλήρωσε Ημερομηνία & Γραμμάρια");
@@ -58,6 +61,7 @@ export default function Kapros() {
     }
   };
 
+  // Συνάρτηση για διαγραφή σπερματέγχυσης με επιβεβαίωση και ενημέρωση της λίστας σπερμάτων μετά τη διαγραφή
   const deleteSperma = async (sId) => {
     if (!window.confirm("Είστε σίγουροι για τη διαγραφή;")) return;
     try {
@@ -69,6 +73,7 @@ export default function Kapros() {
     }
   };
 
+  // Συνάρτηση για ασφαλή εμφάνιση ημερομηνίας, επιστρέφοντας "—" για μη έγκυρες ή κενές ημερομηνίες
   const safeDateDisplay = (dateStr) => {
     if (!dateStr || dateStr === "0000-00-00") return "—";
 
@@ -76,6 +81,7 @@ export default function Kapros() {
     return isValid(parsed) ? format(parsed, "dd/MM/yyyy") : "—";
   };
 
+  // Ταξινόμηση της λίστας σπερμάτων με βάση την ημερομηνία, είτε σε αύξουσα είτε σε φθίνουσα σειρά ανάλογα με την κατάσταση sortAsc
   const sortedList = [...spermaList].sort((a, b) => {
     return sortAsc
       ? new Date(a.day) - new Date(b.day)
@@ -84,7 +90,7 @@ export default function Kapros() {
 
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-6">
-      {/* --- HEADER KAPROS --- */}
+      {/* HEADER CARD */}
       <div className="bg-white rounded-3xl shadow-sm p-6 md:p-10 relative border-t-8 border-green-500">
         <button
           onClick={() => navigate("/kaproi")}
@@ -117,7 +123,7 @@ export default function Kapros() {
         </div>
       </div>
 
-      {/* --- ΚΟΥΜΠΙΑ --- */}
+      {/* BUTTONS */}
       <div className="flex justify-between items-center bg-white p-4 rounded-3xl shadow-sm border border-gray-100">
         <button
           onClick={() => setSortAsc(!sortAsc)}
@@ -133,7 +139,7 @@ export default function Kapros() {
         </button>
       </div>
 
-      {/* --- ΛΙΣΤΑ ΣΠΕΡΜΑΤΩΝ --- */}
+      {/* ΛΙΣΤΑ ΣΠΕΡΜΑΤΩΝ */}
       <div className="space-y-4">
         {sortedList.length === 0 ? (
           <div className="text-center font-bold text-gray-400 py-12 bg-white rounded-3xl border-2 border-dashed border-gray-200">
@@ -190,7 +196,7 @@ export default function Kapros() {
         )}
       </div>
 
-      {/* --- MODAL --- */}
+      {/* MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 p-4">
           <div className="bg-white p-8 rounded-[2rem] w-full max-w-md shadow-2xl relative animate-in zoom-in duration-200">

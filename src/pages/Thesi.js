@@ -8,9 +8,9 @@ export default function Thesi() {
   const [liveAnimals, setLiveAnimals] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newThesiName, setNewThesiName] = useState("");
-
   const navigate = useNavigate();
 
+  // Φόρτωση θέσεων και ζωντανών ζώων
   const loadData = async () => {
     try {
       const [resThesi, resManes, resKaproi] = await Promise.all([
@@ -35,10 +35,12 @@ export default function Thesi() {
     }
   };
 
+  // Φόρτωση δεδομένων κατά την αρχική απόδοση
   useEffect(() => {
     loadData();
   }, []);
 
+  // Διαχείριση αποθήκευσης νέας θέσης
   const handleSave = async () => {
     if (!newThesiName.trim())
       return toast.error("Το όνομα της θέσης δεν μπορεί να είναι κενό");
@@ -55,6 +57,7 @@ export default function Thesi() {
     }
   };
 
+  // Διαχείριση διαγραφής θέσης
   const handleDelete = async (id) => {
     if (!window.confirm("Σίγουρα θέλεις να διαγράψεις αυτή τη θέση;")) return;
     try {
@@ -68,7 +71,7 @@ export default function Thesi() {
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
-      {/* HEADER CARD - UNIFIED STYLE */}
+      {/* HEADER CARD */}
       <div className="bg-white rounded-3xl shadow-sm p-6 md:p-8 border-t-8 border-blue-500 flex flex-col sm:flex-row justify-between items-center gap-4 relative">
         <div>
           <h1 className="text-3xl md:text-4xl font-black text-gray-800 tracking-tight">
@@ -143,7 +146,7 @@ export default function Thesi() {
         })}
       </div>
 
-      {/* MODAL - UNIFIED STYLE */}
+      {/* MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 p-4">
           <div className="bg-white w-full max-w-md rounded-[2rem] shadow-2xl p-8 relative animate-in zoom-in duration-200">
