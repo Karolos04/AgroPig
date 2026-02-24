@@ -134,13 +134,6 @@ export default function Mana() {
     try {
       const res = await axios.post(`${apiUrl}/toketos`, {
         idManas: id,
-        dayToketos: "",
-        bornLive: "",
-        bornDead: "",
-        Ablactation: "",
-        dayAblactation: null,
-        rate: "",
-        text: "",
       });
       setToketoi([...toketoi, { ...res.data, epibaseis: [] }]);
       toast.success("Νέος τοκετός προστέθηκε!");
