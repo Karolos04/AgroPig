@@ -5,6 +5,8 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
 export default function Sfageio() {
+  const apiUrl = process.env.REACT_APP_API_URL;
+
   const [listSfageio, setListSfageio] = useState([]);
   const [deadAnimals, setDeadAnimals] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -27,9 +29,9 @@ export default function Sfageio() {
   const loadData = async () => {
     try {
       const [resSfageio, resManes, resKaproi] = await Promise.all([
-        axios.get("https://argopig-api.onrender.com/sfageio"),
-        axios.get("https://argopig-api.onrender.com/manes"),
-        axios.get("https://argopig-api.onrender.com/kaproi"),
+        axios.get(`${apiUrl}/sfageio`),
+        axios.get(`${apiUrl}/manes`),
+        axios.get(`${apiUrl}/kaproi`),
       ]);
 
       setListSfageio(Array.isArray(resSfageio.data) ? resSfageio.data : []);
@@ -77,13 +79,13 @@ export default function Sfageio() {
     if (!newSfageio.day || !newSfageio.quantity || !newSfageio.category)
       return toast.error("Συμπλήρωσε τα απαραίτητα πεδία");
     try {
-      await axios.post("https://argopig-api.onrender.com/sfageio", newSfageio);
+      await axios.post(`${apiUrl}/sfageio`, newSfageio);
       if (newSfageio.category === "ΜΑΝΕΣ" || newSfageio.category === "ΚΑΠΡΟΙ") {
         const endpoint = newSfageio.category === "ΜΑΝΕΣ" ? "manes" : "kaproi";
-        await axios.put(
-          `https://argopig-api.onrender.com/${endpoint}/number/${newSfageio.number}`,
-          { live: 1, dayDead: newSfageio.day },
-        );
+        await axios.put(`${apiUrl}/${endpoint}/number/${newSfageio.number}`, {
+          live: 1,
+          dayDead: newSfageio.day,
+        });
       }
       toast.success("Η εγγραφή αποθηκεύτηκε");
       setNewSfageio({
@@ -104,7 +106,7 @@ export default function Sfageio() {
   const handleDelete = async (id) => {
     if (!window.confirm("Διαγραφή αυτής της εγγραφής;")) return;
     try {
-      await axios.delete(`https://argopig-api.onrender.com/sfageio/${id}`);
+      await axios.delete(`${apiUrl}/sfageio/${id}`);
       toast.info("Η εγγραφή διαγράφηκε");
       loadData();
     } catch (err) {

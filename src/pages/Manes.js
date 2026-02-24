@@ -5,6 +5,8 @@ import { format, parseISO, isValid, addDays } from "date-fns";
 import { toast } from "react-toastify";
 
 export default function Manes() {
+  const apiUrl = process.env.REACT_APP_API_URL;
+
   const [listManes, setListManes] = useState([]);
   const [thesiList, setThesiList] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -58,8 +60,8 @@ export default function Manes() {
     const fetchData = async () => {
       try {
         const [resManes, resThesi] = await Promise.all([
-          axios.get("https://argopig-api.onrender.com/manes"),
-          axios.get("https://argopig-api.onrender.com/thesi"),
+          axios.get(`${apiUrl}/manes`),
+          axios.get(`${apiUrl}/thesi`),
         ]);
         setThesiList(resThesi.data);
         const manesData = Array.isArray(resManes.data) ? resManes.data : [];
@@ -112,7 +114,7 @@ export default function Manes() {
     if (!window.confirm("Διαγραφή μάνας; Θα διαγραφούν και οι τοκετοί της."))
       return;
     try {
-      await axios.delete(`https://argopig-api.onrender.com/manes/${id}`);
+      await axios.delete(`${apiUrl}/manes/${id}`);
       setListManes((m) => m.filter((mana) => mana.id !== id));
       toast.info("Η Μάνα διαγράφηκε");
     } catch {
@@ -125,7 +127,7 @@ export default function Manes() {
     if (!newMana.number || !newMana.positionId || !newMana.breed)
       return toast.error("Συμπλήρωσε όλα τα υποχρεωτικά πεδία");
     try {
-      const res = await axios.post("https://argopig-api.onrender.com/manes", {
+      const res = await axios.post(`${apiUrl}/manes`, {
         ...newMana,
         live: 0,
       });
@@ -246,7 +248,7 @@ export default function Manes() {
                     onChange={(e) => {
                       const newPosId = e.target.value;
                       axios
-                        .put(`https://argopig-api.onrender.com/manes/${m.id}`, {
+                        .put(`${apiUrl}/manes/${m.id}`, {
                           positionId: newPosId,
                         })
                         .then(() => {

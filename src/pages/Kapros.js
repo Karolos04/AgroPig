@@ -5,6 +5,8 @@ import { format, parseISO, isValid } from "date-fns";
 import { toast } from "react-toastify";
 
 export default function Kapros() {
+  const apiUrl = process.env.REACT_APP_API_URL;
+
   const { id } = useParams();
   const navigate = useNavigate();
   const [kapros, setKapros] = useState({});
@@ -25,9 +27,9 @@ export default function Kapros() {
     const fetchData = async () => {
       try {
         const [resKapros, resSperma, resThesi] = await Promise.all([
-          axios.get(`https://argopig-api.onrender.com/kaproi/${id}`),
-          axios.get(`https://argopig-api.onrender.com/kaproi/sperma/${id}`),
-          axios.get("https://argopig-api.onrender.com/thesi"),
+          axios.get(`${apiUrl}/kaproi/${id}`),
+          axios.get(`${apiUrl}/kaproi/sperma/${id}`),
+          axios.get(`${apiUrl}/thesi`),
         ]);
         setKapros(resKapros.data);
         setSpermaList(Array.isArray(resSperma.data) ? resSperma.data : []);
@@ -48,7 +50,7 @@ export default function Kapros() {
     if (!newSperma.grams || !newSperma.day)
       return toast.error("Συμπλήρωσε Ημερομηνία & Γραμμάρια");
     try {
-      const res = await axios.post("https://argopig-api.onrender.com/sperma", {
+      const res = await axios.post(`${apiUrl}/sperma`, {
         ...newSperma,
         idKapros: id,
       });
@@ -65,7 +67,7 @@ export default function Kapros() {
   const deleteSperma = async (sId) => {
     if (!window.confirm("Είστε σίγουροι για τη διαγραφή;")) return;
     try {
-      await axios.delete(`https://argopig-api.onrender.com/sperma/${sId}`);
+      await axios.delete(`${apiUrl}/sperma/${sId}`);
       setSpermaList((prev) => prev.filter((s) => s.id !== sId));
       toast.info("Το σπέρμα διαγράφηκε");
     } catch (err) {

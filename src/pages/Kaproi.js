@@ -5,6 +5,8 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
 export default function Kaproi() {
+  const apiUrl = process.env.REACT_APP_API_URL;
+
   const [listKaproi, setListKaproi] = useState([]);
   const [thesiList, setThesiList] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -24,8 +26,8 @@ export default function Kaproi() {
     const fetchKaproiAndThesi = async () => {
       try {
         const [resKaproi, resThesi] = await Promise.all([
-          axios.get("https://argopig-api.onrender.com/kaproi"),
-          axios.get("https://argopig-api.onrender.com/thesi"),
+          axios.get(`${apiUrl}/kaproi`),
+          axios.get(`${apiUrl}/thesi`),
         ]);
         setThesiList(resThesi.data);
         const kaproiData = Array.isArray(resKaproi.data) ? resKaproi.data : [];
@@ -46,7 +48,7 @@ export default function Kaproi() {
     if (!newKapro.number || !newKapro.positionId || !newKapro.dayLive)
       return toast.error("Συμπλήρωσε όλα τα πεδία");
     try {
-      const res = await axios.post("https://argopig-api.onrender.com/kaproi", {
+      const res = await axios.post(`${apiUrl}/kaproi`, {
         ...newKapro,
         live: 0,
       });
@@ -64,7 +66,7 @@ export default function Kaproi() {
     if (!window.confirm("Διαγραφή κάπρου; Θα διαγραφούν και τα σπέρματά του."))
       return;
     try {
-      await axios.delete(`https://argopig-api.onrender.com/kaproi/${id}`);
+      await axios.delete(`${apiUrl}/kaproi/${id}`);
       setListKaproi((p) => p.filter((k) => k.id !== id));
       toast.info("Ο κάπρος διαγράφηκε");
     } catch {
@@ -161,12 +163,9 @@ export default function Kaproi() {
                     onChange={(e) => {
                       const newPosId = e.target.value;
                       axios
-                        .put(
-                          `https://argopig-api.onrender.com/kaproi/${k.id}`,
-                          {
-                            positionId: newPosId,
-                          },
-                        )
+                        .put(`${apiUrl}/kaproi/${k.id}`, {
+                          positionId: newPosId,
+                        })
                         .then(() => {
                           setListKaproi((p) =>
                             p.map((x) =>

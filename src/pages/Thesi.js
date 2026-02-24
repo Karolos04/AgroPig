@@ -4,6 +4,8 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
 export default function Thesi() {
+  const apiUrl = process.env.REACT_APP_API_URL;
+
   const [thesiList, setThesiList] = useState([]);
   const [liveAnimals, setLiveAnimals] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -14,9 +16,9 @@ export default function Thesi() {
   const loadData = async () => {
     try {
       const [resThesi, resManes, resKaproi] = await Promise.all([
-        axios.get("https://argopig-api.onrender.com/thesi"),
-        axios.get("https://argopig-api.onrender.com/manes"),
-        axios.get("https://argopig-api.onrender.com/kaproi"),
+        axios.get(`${apiUrl}/thesi`),
+        axios.get(`${apiUrl}/manes`),
+        axios.get(`${apiUrl}/kaproi`),
       ]);
 
       setThesiList(resThesi.data);
@@ -45,7 +47,7 @@ export default function Thesi() {
     if (!newThesiName.trim())
       return toast.error("Το όνομα της θέσης δεν μπορεί να είναι κενό");
     try {
-      await axios.post("https://argopig-api.onrender.com/thesi", {
+      await axios.post(`${apiUrl}/thesi`, {
         name: newThesiName,
       });
       toast.success("Η θέση προστέθηκε!");
@@ -61,7 +63,7 @@ export default function Thesi() {
   const handleDelete = async (id) => {
     if (!window.confirm("Σίγουρα θέλεις να διαγράψεις αυτή τη θέση;")) return;
     try {
-      await axios.delete(`https://argopig-api.onrender.com/thesi/${id}`);
+      await axios.delete(`${apiUrl}/thesi/${id}`);
       toast.info("Η θέση διαγράφηκε");
       loadData();
     } catch (err) {

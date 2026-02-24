@@ -4,6 +4,7 @@ import { parseISO, isValid, differenceInDays, addDays, format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 
 export default function Home() {
+  const apiUrl = process.env.REACT_APP_API_URL;
   const [stats, setStats] = useState({
     expecting: [],
     emptyOrRejected: [],
@@ -15,7 +16,7 @@ export default function Home() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await axios.get("https://argopig-api.onrender.com/manes");
+        const res = await axios.get(`${apiUrl}/manes`);
         const manes = Array.isArray(res.data) ? res.data : [];
         const liveManes = manes.filter((m) => m.live === 0);
 

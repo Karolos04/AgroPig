@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { format, parseISO, isValid, differenceInDays } from "date-fns";
 
 export default function NekraTable() {
+  const apiUrl = process.env.REACT_APP_API_URL;
+
   const [listNekra, setListNekra] = useState([]);
   const [deadAnimals, setDeadAnimals] = useState([]);
   const [numberError, setNumberError] = useState("");
@@ -40,9 +42,9 @@ export default function NekraTable() {
   const loadAllData = async () => {
     try {
       const [resNekra, resManes, resKaproi] = await Promise.all([
-        axios.get("https://argopig-api.onrender.com/nekra"),
-        axios.get("https://argopig-api.onrender.com/manes"),
-        axios.get("https://argopig-api.onrender.com/kaproi"),
+        axios.get(`${apiUrl}/nekra`),
+        axios.get(`${apiUrl}/manes`),
+        axios.get(`${apiUrl}/kaproi`),
       ]);
       setListNekra(resNekra.data);
       const manesData = resManes.data
@@ -125,7 +127,7 @@ export default function NekraTable() {
         const endpoint = newNekra.age === "MANA" ? "manes" : "kaproi";
         try {
           const res = await axios.get(
-            `https://argopig-api.onrender.com/${endpoint}/number/${numberNekra}`,
+            `${apiUrl}/${endpoint}/number/${numberNekra}`,
           );
           if (!res.data) return setNumberError("Δεν υπάρχει αυτός ο αριθμός");
         } catch (err) {
@@ -133,14 +135,14 @@ export default function NekraTable() {
         }
       }
 
-      await axios.post("https://argopig-api.onrender.com/nekra", newNekra);
+      await axios.post(`${apiUrl}/nekra`, newNekra);
 
       if (newNekra.age === "MANA" || newNekra.age === "KAPROS") {
         const endpoint = newNekra.age === "MANA" ? "manes" : "kaproi";
-        await axios.put(
-          `https://argopig-api.onrender.com/${endpoint}/number/${numberNekra}`,
-          { live: 1, dayDead: newNekra.day },
-        );
+        await axios.put(`${apiUrl}/${endpoint}/number/${numberNekra}`, {
+          live: 1,
+          dayDead: newNekra.day,
+        });
       }
 
       toast.success("Η εγγραφή αποθηκεύτηκε");

@@ -6,6 +6,8 @@ import "react-toastify/dist/ReactToastify.css";
 import { parseISO, isValid, addDays, format } from "date-fns";
 
 export default function Mana() {
+  const apiUrl = process.env.REACT_APP_API_URL;
+
   const { id } = useParams();
   const navigate = useNavigate();
   const [mana, setMana] = useState({});
@@ -23,8 +25,8 @@ export default function Mana() {
     const fetchLookups = async () => {
       try {
         const [resKaproi, resThesi] = await Promise.all([
-          axios.get("https://argopig-api.onrender.com/kaproi"),
-          axios.get("https://argopig-api.onrender.com/thesi"),
+          axios.get(`${apiUrl}/kaproi`),
+          axios.get(`${apiUrl}/thesi`),
         ]);
         setKaproi(resKaproi.data);
         setThesiList(resThesi.data);
@@ -39,9 +41,7 @@ export default function Mana() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const res = await axios.get(
-          `https://argopig-api.onrender.com/manes/${id}`,
-        );
+        const res = await axios.get(`${apiUrl}/manes/${id}`);
         const data = res.data;
         setMana({
           id: data.id,
@@ -71,10 +71,7 @@ export default function Mana() {
   const updateMana = async (key, value) => {
     try {
       const updatedMana = { ...mana, [key]: value };
-      const res = await axios.put(
-        `https://argopig-api.onrender.com/manes/${id}`,
-        updatedMana,
-      );
+      const res = await axios.put(`${apiUrl}/manes/${id}`, updatedMana);
       setMana({ ...res.data, positionId: res.data.positionId });
       toast.success("Η καρτέλα ενημερώθηκε!");
     } catch (err) {
@@ -105,10 +102,7 @@ export default function Mana() {
   // Συνάρτηση για αποθήκευση τοκετού με ενημέρωση στο backend και εμφάνιση ειδοποιήσεων
   const saveToketo = async (t) => {
     try {
-      const res = await axios.put(
-        `https://argopig-api.onrender.com/toketos/${t.id}`,
-        t,
-      );
+      const res = await axios.put(`${apiUrl}/toketos/${t.id}`, t);
       setToketoi((prev) =>
         prev.map((tok) =>
           tok.id === t.id ? { ...res.data, epibaseis: tok.epibaseis } : tok,
@@ -127,9 +121,7 @@ export default function Mana() {
     )
       return;
     try {
-      await axios.delete(
-        `https://argopig-api.onrender.com/toketos/${idToketo}`,
-      );
+      await axios.delete(`${apiUrl}/toketos/${idToketo}`);
       setToketoi((p) => p.filter((t) => t.id !== idToketo));
       toast.info("Ο Τοκετός διαγράφηκε");
     } catch (err) {
@@ -140,7 +132,7 @@ export default function Mana() {
   // Συνάρτηση για προσθήκη νέου τοκετού με αρχικές κενές τιμές και ενημέρωση της λίστας τοκετών μετά την προσθήκη
   const addToketo = async () => {
     try {
-      const res = await axios.post("https://argopig-api.onrender.com/toketos", {
+      const res = await axios.post(`${apiUrl}/toketos`, {
         idManas: id,
         dayToketos: "",
         bornLive: "",
@@ -161,7 +153,7 @@ export default function Mana() {
   const addEpibasi = async (toketoId) => {
     try {
       const today = new Date().toISOString().split("T")[0];
-      const res = await axios.post("https://argopig-api.onrender.com/epibasi", {
+      const res = await axios.post(`${apiUrl}/epibasi`, {
         idToketou: toketoId,
         day: today,
         idKapros: "",
@@ -186,7 +178,7 @@ export default function Mana() {
     try {
       const toketo = toketoi.find((t) => t.id === toketoId);
       const ep = toketo.epibaseis.find((e) => e.id === epId);
-      await axios.put(`https://argopig-api.onrender.com/epibasi/${ep.id}`, ep);
+      await axios.put(`${apiUrl}/epibasi/${ep.id}`, ep);
       toast.success("Η Επίβαση αποθηκεύτηκε!");
     } catch (err) {
       toast.error("Σφάλμα αποθήκευσης επίβασης");
@@ -197,7 +189,7 @@ export default function Mana() {
   const deleteEpibasi = async (toketoId, epId) => {
     if (!window.confirm("Διαγραφή επίβασης;")) return;
     try {
-      await axios.delete(`https://argopig-api.onrender.com/epibasi/${epId}`);
+      await axios.delete(`${apiUrl}/epibasi/${epId}`);
       setToketoi((prev) =>
         prev.map((t) =>
           t.id === toketoId
@@ -386,7 +378,7 @@ export default function Mana() {
                   Ζωντανά
                 </label>
                 <input
-                  type="number"
+                  type="text"
                   value={t.bornLive || ""}
                   onChange={(e) =>
                     updateToketo(t.id, "bornLive", e.target.value)
@@ -399,7 +391,7 @@ export default function Mana() {
                   Νεκρά
                 </label>
                 <input
-                  type="number"
+                  type="text"
                   value={t.bornDead || ""}
                   onChange={(e) =>
                     updateToketo(t.id, "bornDead", e.target.value)
@@ -425,7 +417,7 @@ export default function Mana() {
                   Απογαλακτ.
                 </label>
                 <input
-                  type="number"
+                  type="text"
                   value={t.Ablactation || ""}
                   onChange={(e) =>
                     updateToketo(t.id, "Ablactation", e.target.value)
@@ -443,7 +435,18 @@ export default function Mana() {
                   className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-green-500 transition-colors cursor-pointer"
                 >
                   <option value="">-</option>
-                  {["Α++", "Α+", "Α", "Β+", "Β", "Γ+", "Γ", "Γ-"].map((r) => (
+                  {[
+                    "Α++",
+                    "Α+",
+                    "Α",
+                    "Α-",
+                    "Β+",
+                    "Β",
+                    "Β-",
+                    "Γ+",
+                    "Γ",
+                    "Γ-",
+                  ].map((r) => (
                     <option key={r} value={r}>
                       {r}
                     </option>
