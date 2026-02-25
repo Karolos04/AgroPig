@@ -41,6 +41,17 @@ export default function Kapros() {
     fetchData();
   }, [id]);
 
+  const updateKapros = async (field, value) => {
+    try {
+      const updated = { ...kapros, [field]: value };
+      const res = await axios.put(`${apiUrl}/kaproi/${id}`, updated);
+      setKapros(res.data);
+      toast.success("Η καρτέλα ενημερώθηκε!");
+    } catch (err) {
+      toast.error("Σφάλμα ενημέρωσης καρτέλας");
+    }
+  };
+
   // Εύρεση ονόματος θέσης καπρού με βάση το positionId
   const thesiName =
     thesiList.find((t) => t.id === Number(kapros.positionId))?.name || "—";
@@ -102,25 +113,71 @@ export default function Kapros() {
         </button>
 
         <h1 className="text-4xl md:text-5xl font-black text-center text-gray-800 tracking-tight">
-          #{kapros.number || "—"}
+          <input
+            type="text"
+            value={kapros.number || ""}
+            onChange={(e) => setKapros({ ...kapros, number: e.target.value })}
+            className="bg-transparent border-2 border-gray-300 rounded-3xl px-4 py-2 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-colors text-center w-max mx-auto font-black text-gray-800 text-4xl"
+            placeholder="Αριθμός Καπρού"
+          />
         </h1>
 
         <div className="mt-8 flex flex-wrap justify-center gap-4 md:gap-6 text-sm md:text-base">
           <div className="bg-gray-50 px-6 py-4 rounded-3xl border border-gray-100 text-center min-w-[140px] shadow-sm">
-            <span className="font-black text-[11px] text-gray-400 uppercase block mb-1">
-              Θέση
-            </span>
-            <span className="font-black text-xl text-gray-800">
-              {thesiName}
-            </span>
+            <div className="flex flex-col">
+              <span className="text-xs font-black text-gray-400 uppercase mb-2 pl-1">
+                Θέση
+              </span>
+              <select
+                value={kapros.positionId || ""}
+                onChange={(e) => updateKapros("positionId", e.target.value)}
+                className="p-3.5 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 outline-none font-bold text-gray-800 transition-colors cursor-pointer"
+              >
+                <option value="">Επιλογή Θέσης</option>
+                {thesiList.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="bg-gray-50 px-6 py-4 rounded-3xl border border-gray-100 text-center min-w-[140px] shadow-sm">
-            <span className="font-black text-[11px] text-gray-400 uppercase block mb-1">
-              Ημ. Γέννησης
+            <div className="flex flex-col">
+              <span className="text-xs font-black text-gray-400 uppercase mb-2 pl-1">
+                Ράτσα
+              </span>
+              <select
+                value={kapros.breed || ""}
+                onChange={(e) => updateKapros("breed", e.target.value)}
+                className="p-3.5 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 outline-none font-bold text-gray-800 transition-colors cursor-pointer"
+              >
+                <option value="">Επιλογή Ράτσας</option>
+                {[
+                  "Landrace",
+                  "Yorkshire",
+                  "Duroc",
+                  "F1",
+                  "F2-Landrace",
+                  "F2-Yorkshire",
+                ].map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-black text-gray-400 uppercase mb-2 pl-1">
+              Ημερ. Γέννησης
             </span>
-            <span className="font-black text-xl text-gray-800">
-              {safeDateDisplay(kapros.dayLive)}
-            </span>
+            <input
+              type="date"
+              value={safeDate(kapros.dayLive)}
+              onChange={(e) => updateKapros("dayLive", e.target.value)}
+              className="p-3.5 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 outline-none font-bold text-gray-800 transition-colors"
+            />
           </div>
         </div>
       </div>

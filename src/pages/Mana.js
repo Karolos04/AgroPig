@@ -233,7 +233,13 @@ export default function Mana() {
           ← Πίσω
         </button>
         <h1 className="text-4xl md:text-5xl font-black mb-8 text-center text-gray-800 tracking-tight">
-          #{mana.number}
+          <input
+            type="text"
+            value={mana.number || ""}
+            onChange={(e) => updateMana("number", e.target.value)}
+            className="bg-transparent border-2 border-gray-300 rounded-3xl px-4 py-2 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-colors text-center w-max mx-auto font-black text-gray-800 text-4xl"
+            placeholder="Αριθμός Μάνας"
+          />
         </h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-gray-50/50 p-4 md:p-6 rounded-[2rem] border border-gray-100">
