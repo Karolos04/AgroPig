@@ -149,8 +149,6 @@ export default function Mana() {
       const res = await axios.post(`${apiUrl}/epibasi`, {
         idToketou: toketoId,
         day: today,
-        idKapros: "",
-        text: "",
         rejection: 0,
       });
       setToketoi((prev) =>
