@@ -47,7 +47,13 @@ export default function Kapros() {
     try {
       const updated = { ...kapros, [field]: value };
       const res = await axios.put(`${apiUrl}/kaproi/${id}`, updated);
-      setKapros(res.data);
+      setKapros({
+        ...res.data,
+        number: res.data.number,
+        positionId: res.data.positionId,
+        breed: res.data.breed,
+        dayLive: res.data.dayLive,
+      });
       toast.success("Η καρτέλα ενημερώθηκε!");
     } catch (err) {
       toast.error("Σφάλμα ενημέρωσης καρτέλας");
