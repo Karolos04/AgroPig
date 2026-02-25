@@ -72,7 +72,13 @@ export default function Mana() {
     try {
       const updatedMana = { ...mana, [key]: value };
       const res = await axios.put(`${apiUrl}/manes/${id}`, updatedMana);
-      setMana({ ...res.data, positionId: res.data.positionId });
+      setMana({
+        ...res.data,
+        number: res.data.number,
+        positionId: res.data.positionId,
+        breed: res.data.breed,
+        dayLive: res.data.dayLive,
+      });
       toast.success("Η καρτέλα ενημερώθηκε!");
     } catch (err) {
       toast.error("Σφάλμα ενημέρωσης χοιρομητέρας");
