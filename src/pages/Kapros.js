@@ -21,6 +21,8 @@ export default function Kapros() {
     grams: "",
     rate: "",
   });
+  const safeDate = (date) =>
+    !date || date === "0000-00-00" ? "" : date.split("T")[0];
 
   // Φόρτωση δεδομένων καπρού, σπερμάτων και θέσεων κατά την αρχική φόρτωση της σελίδας
   useEffect(() => {
