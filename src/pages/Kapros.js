@@ -124,7 +124,7 @@ export default function Kapros() {
           <input
             type="text"
             value={kapros.number || ""}
-            onChange={(e) => setKapros({ ...kapros, number: e.target.value })}
+            onChange={(e) => updateKapros("number", e.target.value)}
             className="bg-transparent border-2 border-gray-300 rounded-3xl px-4 py-2 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-colors text-center w-max mx-auto font-black text-gray-800 text-4xl"
             placeholder="Αριθμός Καπρού"
           />
