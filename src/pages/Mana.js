@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { parseISO, isValid, addDays, format } from "date-fns";
@@ -9,7 +9,6 @@ export default function Mana() {
   const apiUrl = process.env.REACT_APP_API_URL;
 
   const { id } = useParams();
-  const navigate = useNavigate();
   const [mana, setMana] = useState({});
   const [toketoi, setToketoi] = useState([]);
   const [showAll, setShowAll] = useState(false);
@@ -232,18 +231,12 @@ export default function Mana() {
       <ToastContainer position="top-right" autoClose={2000} />
       {/* HEADER CARD */}
       <div className="bg-white rounded-3xl shadow-sm p-6 md:p-8 border-t-8 border-green-500 relative">
-        <button
-          onClick={() => navigate("/manes")}
-          className="absolute top-6 left-6 text-gray-400 hover:text-gray-800 font-bold transition-colors hidden sm:block"
-        >
-          ← Πίσω
-        </button>
         <h1 className="text-4xl md:text-5xl font-black mb-8 text-center text-gray-800 tracking-tight">
           <input
             type="text"
             value={mana.number || ""}
             onChange={(e) => updateMana("number", e.target.value)}
-            className="bg-transparent border-2 border-gray-300 rounded-3xl px-4 py-2 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-colors text-center w-max mx-auto font-black text-gray-800 text-4xl"
+            className="bg-transparent border-2 border-gray-300 rounded-3xl px-4 py-2 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-colors text-center w-full mx-auto font-black text-gray-800 text-4xl"
             placeholder="Αριθμός Μάνας"
           />
         </h1>
@@ -323,7 +316,7 @@ export default function Mana() {
                 </>
               ) : (
                 <span className="bg-red-100 text-red-700 px-4 py-2 rounded-xl font-black text-center inline-block w-max shadow-sm">
-                  ⚠️ Απορρίφθηκε
+                  ⚠️ Απορριξη / Επιστροφή
                 </span>
               )
             ) : toketoi.length > 0 &&
@@ -555,7 +548,7 @@ export default function Mana() {
                         className="w-5 h-5 text-red-600 rounded-md border-gray-300 focus:ring-red-500 cursor-pointer"
                       />
                       <span className="font-bold text-sm text-gray-600 group-hover:text-red-600 transition-colors">
-                        Απόρριψη
+                        Απόρριψη / Επιστροφή
                       </span>
                     </label>
                     <div className="flex gap-2">

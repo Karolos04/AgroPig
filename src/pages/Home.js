@@ -9,6 +9,7 @@ export default function Home() {
     expecting: [],
     emptyOrRejected: [],
     weaned5Days: [],
+    check20Days: [],
   });
   const navigate = useNavigate();
 
@@ -16,16 +17,24 @@ export default function Home() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        // Τραβάμε όλες τις μάνες
         const res = await axios.get(`${apiUrl}/manes`);
         const manes = Array.isArray(res.data) ? res.data : [];
         const liveManes = manes.filter((m) => m.live === 0);
 
+        // Τραβάμε όλες τις θέσεις για να βρούμε το id της θέσης "ΤΟΚΕΤΟΣ"
+        const resThesi = await axios.get(`${apiUrl}/thesi/`);
+        const thesi = Array.isArray(resThesi.data) ? resThesi.data : [];
+        const toketos = thesi.filter((t) => t.name === "ΤΟΚΕΤΟΣ");
+
         const expecting = [];
         const emptyOrRejected = [];
         const weaned = [];
+        const checkEpibasi20Days = [];
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
+        // Για κάθε μάνα που είναι ζωντανή, ελέγχουμε τα δεδομένα της για να κατατάξουμε σε μια από τις 3 κατηγορίες
         liveManes.forEach((m) => {
           const toketoi = m.toketos || m.toketoi || [];
           const lastToketos = toketoi[0];
@@ -46,7 +55,7 @@ export default function Home() {
             lastEpibasi &&
             !lastEpibasi.rejection &&
             !hasToketosDate &&
-            m.positionId !== "ΤΟΚΕΤΟΣ"
+            m.positionId !== toketos[0]?.id
           ) {
             const epDate = parseISO(lastEpibasi.day);
             if (isValid(epDate)) {
@@ -74,10 +83,22 @@ export default function Home() {
               if (differenceInDays(today, weanDate) >= 5) weaned.push(m);
             }
           }
+
+          const isCheckEpibasi20Days =
+            lastEpibasi &&
+            differenceInDays(today, parseISO(lastEpibasi.day)) === 20;
+          if (isCheckEpibasi20Days) {
+            checkEpibasi20Days.push(m);
+          }
         });
 
         expecting.sort((a, b) => a.daysRemaining - b.daysRemaining);
-        setStats({ expecting, emptyOrRejected, weaned5Days: weaned });
+        setStats({
+          expecting,
+          emptyOrRejected,
+          weaned5Days: weaned,
+          check20Days: checkEpibasi20Days,
+        });
       } catch (err) {
         console.error("Σφάλμα", err);
       }
@@ -143,7 +164,7 @@ export default function Home() {
           <div className="flex justify-between items-center mb-6 pb-4 border-b">
             <h2 className="text-gray-700 font-black text-lg flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-red-500"></span> Απόρριψη
-              / Κενές
+              / Επιστροφή / Κενές
             </h2>
             <span className="bg-red-100 text-red-800 font-bold px-4 py-1.5 rounded-xl text-sm">
               {stats.emptyOrRejected.length}
@@ -179,6 +200,29 @@ export default function Home() {
                 key={m.id}
                 onClick={() => navigate(`/mana/${m.id}`)}
                 className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-5 py-2.5 rounded-2xl font-black cursor-pointer hover:bg-yellow-100 transition shadow-sm"
+              >
+                #{m.number}
+              </span>
+            ))}
+          </div>
+        </div>
+        {/* ΚΑΡΤΑ 4 */}
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 flex flex-col h-full hover:shadow-md transition">
+          <div className="flex justify-between items-center mb-6 pb-4 border-b">
+            <h2 className="text-gray-700 font-black text-lg flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-lime-300"></span> Ελενγος
+              20 ημ.
+            </h2>
+            <span className="bg-lime-100 text-lime-800 font-bold px-4 py-1.5 rounded-xl text-sm">
+              {stats.check20Days.length}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {stats.check20Days.map((m) => (
+              <span
+                key={m.id}
+                onClick={() => navigate(`/mana/${m.id}`)}
+                className="bg-lime-50 border border-lime-200 text-lime-800 px-5 py-2.5 rounded-2xl font-black cursor-pointer hover:bg-lime-100 transition shadow-sm"
               >
                 #{m.number}
               </span>

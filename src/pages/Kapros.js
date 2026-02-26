@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { format, parseISO, isValid } from "date-fns";
 import { toast } from "react-toastify";
 
@@ -8,7 +8,6 @@ export default function Kapros() {
   const apiUrl = process.env.REACT_APP_API_URL;
 
   const { id } = useParams();
-  const navigate = useNavigate();
   const [kapros, setKapros] = useState({});
   const [spermaList, setSpermaList] = useState([]);
   const [thesiList, setThesiList] = useState([]);
@@ -113,69 +112,59 @@ export default function Kapros() {
     <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-6">
       {/* HEADER CARD */}
       <div className="bg-white rounded-3xl shadow-sm p-6 md:p-10 relative border-t-8 border-green-500">
-        <button
-          onClick={() => navigate("/kaproi")}
-          className="absolute top-6 left-6 text-gray-400 hover:text-gray-800 font-bold transition-colors hidden sm:block"
-        >
-          ← Πίσω
-        </button>
-
         <h1 className="text-4xl md:text-5xl font-black text-center text-gray-800 tracking-tight">
           <input
             type="text"
             value={kapros.number || ""}
             onChange={(e) => updateKapros("number", e.target.value)}
-            className="bg-transparent border-2 border-gray-300 rounded-3xl px-4 py-2 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-colors text-center w-max mx-auto font-black text-gray-800 text-4xl"
+            className="bg-transparent border-2 border-gray-300 rounded-3xl px-4 py-2 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-colors text-center w-full mx-auto font-black text-gray-800 text-4xl"
             placeholder="Αριθμός Καπρού"
           />
         </h1>
 
-        <div className="mt-8 flex flex-wrap justify-center gap-4 md:gap-6 text-sm md:text-base">
-          <div className="bg-gray-50 px-6 py-4 rounded-3xl border border-gray-100 text-center min-w-[140px] shadow-sm">
-            <div className="flex flex-col">
-              <span className="text-xs font-black text-gray-400 uppercase mb-2 pl-1">
-                Θέση
-              </span>
-              <select
-                value={kapros.positionId || ""}
-                onChange={(e) => updateKapros("positionId", e.target.value)}
-                className="p-3.5 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 outline-none font-bold text-gray-800 transition-colors cursor-pointer"
-              >
-                <option value="">Επιλογή Θέσης</option>
-                {thesiList.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-gray-50/50 p-4 md:p-6 rounded-[2rem] border border-gray-100">
+          <div className="flex flex-col">
+            <span className="text-xs font-black text-gray-400 uppercase mb-2 pl-1">
+              Θεση
+            </span>
+            <select
+              value={kapros.positionId || ""}
+              onChange={(e) => updateKapros("positionId", e.target.value)}
+              className="p-3.5 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 outline-none font-bold text-gray-800 transition-colors cursor-pointer"
+            >
+              <option value="">Επιλογή Θέσης</option>
+              {thesiList.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
           </div>
-          <div className="bg-gray-50 px-6 py-4 rounded-3xl border border-gray-100 text-center min-w-[140px] shadow-sm">
-            <div className="flex flex-col">
-              <span className="text-xs font-black text-gray-400 uppercase mb-2 pl-1">
-                Ράτσα
-              </span>
-              <select
-                value={kapros.breed || ""}
-                onChange={(e) => updateKapros("breed", e.target.value)}
-                className="p-3.5 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 outline-none font-bold text-gray-800 transition-colors cursor-pointer"
-              >
-                <option value="">Επιλογή Ράτσας</option>
-                {[
-                  "Landrace",
-                  "Yorkshire",
-                  "Duroc",
-                  "F1",
-                  "F2-Landrace",
-                  "F2-Yorkshire",
-                ].map((b) => (
-                  <option key={b} value={b}>
-                    {b}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-black text-gray-400 uppercase mb-2 pl-1">
+              Ράτσα
+            </span>
+            <select
+              value={kapros.breed || ""}
+              onChange={(e) => updateKapros("breed", e.target.value)}
+              className="p-3.5 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 outline-none font-bold text-gray-800 transition-colors cursor-pointer"
+            >
+              <option value="">Επιλογή Ράτσας</option>
+              {[
+                "Landrace",
+                "Yorkshire",
+                "Duroc",
+                "F1",
+                "F2-Landrace",
+                "F2-Yorkshire",
+              ].map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
           </div>
+
           <div className="flex flex-col">
             <span className="text-xs font-black text-gray-400 uppercase mb-2 pl-1">
               Ημερ. Γέννησης
