@@ -19,7 +19,7 @@ export default function NekraTable() {
     age: "",
     category: "0",
   });
-  let numberNekra = "";
+  const [numberNekra, setNumberNekra] = useState("");
   const navigate = useNavigate();
   const ages = ["A", "B", "SOUPER", "MESEO", "PAXYNSH", "MANA", "KAPROS"];
 
@@ -385,11 +385,11 @@ export default function NekraTable() {
                 <div>
                   <input
                     type="text"
-                    placeholder={numberNekra} //"Αριθμός ζώου"
+                    placeholder="Αριθμός ζώου"
                     className={`w-full p-4 border rounded-2xl outline-none font-bold transition-colors ${numberError ? "border-red-500 bg-red-50 focus:ring-2 focus:ring-red-500 text-red-700" : "bg-gray-50 border-gray-200 focus:ring-2 focus:ring-red-500 text-gray-700"}`}
                     value={numberNekra}
                     onChange={(e) => {
-                      numberNekra = e.target.value;
+                      setNumberNekra(e.target.value);
                       setNumberError("");
                     }}
                   />
