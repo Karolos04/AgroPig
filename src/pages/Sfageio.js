@@ -37,7 +37,7 @@ export default function Sfageio() {
       setListSfageio(Array.isArray(resSfageio.data) ? resSfageio.data : []);
 
       const manesData = resManes.data
-        .filter((m) => Number(m.live) === 1 && m.dayDead)
+        .filter((m) => Number(m.live) === 2 && m.dayDead)
         .map((m) => ({
           ...m,
           type: "MANA",
@@ -45,7 +45,7 @@ export default function Sfageio() {
           link: `/mana/${m.id}`,
         }));
       const kaproiData = resKaproi.data
-        .filter((k) => Number(k.live) === 1 && k.dayDead)
+        .filter((k) => Number(k.live) === 2 && k.dayDead)
         .map((k) => ({
           ...k,
           type: "KAPROS",
@@ -83,7 +83,7 @@ export default function Sfageio() {
       if (newSfageio.category === "ΜΑΝΕΣ" || newSfageio.category === "ΚΑΠΡΟΙ") {
         const endpoint = newSfageio.category === "ΜΑΝΕΣ" ? "manes" : "kaproi";
         await axios.put(`${apiUrl}/${endpoint}/number/${newSfageio.number}`, {
-          live: 1,
+          live: 2,
           dayDead: newSfageio.day,
         });
       }
